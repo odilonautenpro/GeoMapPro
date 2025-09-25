@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="35dp"
+    android:background="#000000">
+
+    <Button
+        android:id="@+id/btnCarregar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Carregar Trabalho"
+        android:textSize="18sp"
+        android:textColor="@color/black"
+        android:backgroundTint="@color/white"
+        android:onClick="btnCarregar"
+        android:padding="16dp"
+        app:layout_constraintWidth_percent="0.3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btnNovo"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        android:layout_margin="12dp"/>
+
+    <Button
+        android:id="@+id/btnNovo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Novo Trabalho"
+        android:textSize="18sp"
+        android:textColor="@color/black"
+        android:backgroundTint="@color/white"
+        android:onClick="btnNovo"
+        android:padding="16dp"
+        app:layout_constraintWidth_percent="0.3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnCarregar"
+        app:layout_constraintEnd_toStartOf="@id/btnAjustes"
+        android:layout_margin="12dp"/>
+
+    <Button
+        android:id="@+id/btnAjustes"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Ajustes"
+        android:textSize="18sp"
+        android:textColor="@color/black"
+        android:backgroundTint="@color/white"
+        android:onClick="btnAjustes"
+        android:padding="16dp"
+        app:layout_constraintWidth_percent="0.3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnNovo"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="12dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
