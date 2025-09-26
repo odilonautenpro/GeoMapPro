@@ -1,54 +1,55 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <org.osmdroid.views.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
+        android:layout_height="match_parent" />
 
     <Button
-        android:id="@+id/btnNovoPonto"
-        android:layout_width="wrap_content"
+        android:id="@+id/btnVoltar"
+        android:layout_width="110dp"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:layout_marginBottom="30dp"
-        android:onClick="btnNovoPonto"
-        android:text="Novo Ponto"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="Voltar"
+        android:onClick="btnVoltar" />
 
     <Button
         android:id="@+id/btnExportar"
-        android:layout_width="wrap_content"
+        android:layout_width="110dp"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="30dp"
-        android:onClick="btnExportar"
+        android:layout_toEndOf="@id/btnVoltar"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
         android:text="Exportar"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnListarPontos" />
+        android:onClick="btnExportar" />
+
+    <Button
+        android:id="@+id/btnNovo"
+        android:layout_width="140dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="Novo Ponto"
+        android:onClick="btnNovoPonto" />
 
     <Button
         android:id="@+id/btnListarPontos"
-        android:layout_width="wrap_content"
+        android:layout_width="140dp"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="30dp"
-        android:onClick="btnListarPontos"
+        android:layout_toStartOf="@id/btnNovo"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
         android:text="Listar Pontos"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnNovoPonto" />
+        android:onClick="btnListarPontos" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</RelativeLayout>

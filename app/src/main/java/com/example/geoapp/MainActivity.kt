@@ -18,13 +18,16 @@ import android.graphics.Paint
 import org.json.JSONArray
 import org.json.JSONObject
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.util.SimpleRegisterReceiver
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Overlay
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+import org.osmdroid.mapsforge.MapsForgeTileProvider
+import org.osmdroid.mapsforge.MapsForgeTileSource
+import org.mapsforge.map.android.graphics.AndroidGraphicFactory
 import java.io.File
 import java.io.FileWriter
 import java.text.DecimalFormat
@@ -33,56 +36,57 @@ import java.util.Date
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
-
-    // === MAPA / LOCALIZAÇÃO ===
     private lateinit var map: MapView
     private lateinit var myLocation: MyLocationNewOverlay
     private lateinit var crossOverlay: Overlay
-
-    // === ESTADO DO TRABALHO ===
     private var nomeTrabalho: String = ""
     private var tipoCultura: String = ""
     private var georefHabilitado: Boolean = false
-    private val pontosMem = mutableListOf(GeoPoint(0.0, 0.0)) // placeholder; não usado diretamente
-
     private val MAX_MARKERS_TO_DRAW = 500
     private val MAX_POINTS_TO_KEEP  = 5000
-
     private val pontosKey: String
         get() = "pontos_${nomeTrabalho.ifEmpty { "default" }}"
+    private val FIXED_FALLBACK = GeoPoint(-26.1955215, -52.6710228)
+    private object PontoKeys {
+        const val ID   = "id"
+        const val LAT  = "lat"
+        const val LNG  = "lng"
+        const val TS   = "ts"
+        const val UMID = "umid"
+        const val TEMP = "temp"
+        const val PH   = "ph"
+        const val N    = "n"
+        const val K    = "k"
+        const val P    = "p"
+    }
 
-    // === PERMISSÕES ===
     private val requestLocationPerms =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { perms ->
             val granted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                     perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-            if (granted) setupMyLocationOverlayAndCenter()
+            if (granted) {
+                centerOnStartupLocation()
+                setupMyLocationOverlayAndCenter()
+            }
         }
 
-    // ===== Overlay que desenha um "X" no centro da tela =====
     private class CenterCrossOverlay(
         private val sizeDp: Float = 14f,
         private val strokeDp: Float = 2f,
-        private val color: Int = Color.parseColor("#FF3D00") // laranja forte
+        private val color: Int = Color.parseColor("#FF3D00")
     ) : Overlay() {
-
-        private fun dpToPx(dp: Float, view: View) =
-            dp * view.resources.displayMetrics.density
-
+        private fun dpToPx(dp: Float, view: View) = dp * view.resources.displayMetrics.density
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeCap = Paint.Cap.ROUND
             this.color = this@CenterCrossOverlay.color
         }
-
         override fun draw(c: Canvas, osmv: MapView, shadow: Boolean) {
             if (shadow) return
             val cx = osmv.width / 2f
             val cy = osmv.height / 2f
             val r  = dpToPx(sizeDp, osmv)
             paint.strokeWidth = dpToPx(strokeDp, osmv)
-
-            // "X" central
             c.drawLine(cx - r, cy - r, cx + r, cy + r, paint)
             c.drawLine(cx - r, cy + r, cx + r, cy - r, paint)
         }
@@ -93,34 +97,34 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        // Extras vindos das telas "Novo/Carregar"
         nomeTrabalho     = intent.getStringExtra("nome_trabalho").orEmpty()
         tipoCultura      = intent.getStringExtra("tipo_cultura").orEmpty()
         georefHabilitado = intent.getBooleanExtra("georreferenciamento_habilitado", false)
 
-        // Requerido pelo OSMDroid para cache
         Configuration.getInstance().userAgentValue = packageName
 
-        // Suporta tanto @id/mapView (recomendado) quanto @id/map (se você manteve o id antigo)
         @Suppress("UNCHECKED_CAST")
         map = (findViewById<MapView?>(resources.getIdentifier("mapView", "id", packageName))
             ?: findViewById(resources.getIdentifier("map", "id", packageName))) as MapView
 
-        // Fonte de tiles padrão do OSM (sem chave, sem GMS)
-        map.setTileSource(TileSourceFactory.MAPNIK)
-        map.setMultiTouchControls(true)
-
-        // Viewport inicial (evita "mundo inteiro" antes do 1º fix)
         val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
         val defaultZoom = sp.getFloat("default_zoom", 16f).toDouble()
-        val fallback = GeoPoint(-26.1954494, -52.6717275)
         map.controller.setZoom(defaultZoom)
-        map.controller.setCenter(fallback)
+        map.setMultiTouchControls(true)
 
-        // Overlay do "X" no centro (adicionado por último para ficar por cima)
+        setupOfflineMapOrWarn()
+
         crossOverlay = CenterCrossOverlay()
         map.overlays.add(crossOverlay)
-        map.invalidate()
+
+        if (georefHabilitado) {
+            ensureLocationAndProvidersThen {
+                centerOnStartupLocation()
+                setupMyLocationOverlayAndCenter()
+            }
+        } else {
+            map.controller.setCenter(FIXED_FALLBACK)
+        }
 
         // Long-press em "Listar Pontos" limpa os pontos do trabalho
         findViewById<View>(R.id.btnListarPontos).setOnLongClickListener {
@@ -128,14 +132,39 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        // Configura localização (permissões + providers) e centraliza no 1º fix
-        if (georefHabilitado) ensureLocationAndProvidersThen { setupMyLocationOverlayAndCenter() }
-
-        // Desenha pontos salvos deste trabalho
+        // Desenha pontos salvos
         desenharPontosDoPrefs()
     }
 
-    // ========== LOCALIZAÇÃO / CENTRALIZAÇÃO ==========
+    private fun setupOfflineMapOrWarn() {
+        // Necessário pelo Mapsforge
+        AndroidGraphicFactory.createInstance(application)
+        MapsForgeTileSource.createInstance(application)
+
+        // Espera-se o arquivo em: Android/data/<pkg>/files/maps/brazil.map
+        val mapsDir = File(getExternalFilesDir("maps"), "")
+        val mapFile = File(mapsDir, "brazil.map")
+
+        if (!mapFile.exists()) {
+            Toast.makeText(this, "brazil.map não encontrado em ${mapsDir.absolutePath}", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        try {
+            val tileSource = MapsForgeTileSource.createFromFiles(arrayOf(mapFile))
+            val forgeProvider = MapsForgeTileProvider(
+                SimpleRegisterReceiver(this),
+                tileSource,
+                null
+            )
+            map.setTileProvider(forgeProvider)
+            map.setUseDataConnection(false)
+            Toast.makeText(this, "Usando mapa offline: ${mapFile.name}", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Falha no mapa offline: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun ensureLocationAndProvidersThen(afterOk: () -> Unit) {
         val hasFine  = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val hasCoarse= ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -151,10 +180,35 @@ class MainActivity : AppCompatActivity() {
         val netOn = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
         if (!gpsOn && !netOn) {
             Toast.makeText(this, "Ative GPS ou Localização por Rede", Toast.LENGTH_LONG).show()
-            // Opcional: abrir configurações
-            // startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
         }
         afterOk()
+    }
+
+    private fun centerOnStartupLocation() {
+        val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
+        val defaultZoom = sp.getFloat("default_zoom", 16f).toDouble()
+        val lm = getSystemService(LOCATION_SERVICE) as LocationManager
+
+        val lastGps = try { lm.getLastKnownLocation(LocationManager.GPS_PROVIDER) } catch (_: SecurityException) { null }
+        val lastNet = try { lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) } catch (_: SecurityException) { null }
+        val best = listOfNotNull(lastGps, lastNet).maxByOrNull { it.time }
+        if (best != null) {
+            val p = GeoPoint(best.latitude, best.longitude)
+            map.controller.setZoom(defaultZoom)
+            map.controller.setCenter(p)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                lm.getCurrentLocation(LocationManager.GPS_PROVIDER, null, mainExecutor) { loc ->
+                    loc?.let {
+                        val here = GeoPoint(it.latitude, it.longitude)
+                        map.controller.setZoom(defaultZoom)
+                        map.controller.setCenter(here)
+                    }
+                }
+            } catch (_: SecurityException) { }
+        }
     }
 
     private fun setupMyLocationOverlayAndCenter() {
@@ -162,13 +216,12 @@ class MainActivity : AppCompatActivity() {
         val defaultZoom = sp.getFloat("default_zoom", 16f).toDouble()
 
         val provider = GpsMyLocationProvider(this).apply {
-            // Usa rede além do GPS para acelerar o 1º fix
             addLocationSource(LocationManager.NETWORK_PROVIDER)
         }
 
         myLocation = MyLocationNewOverlay(provider, map).apply {
             enableMyLocation()
-            enableFollowLocation() // seguir automaticamente a posição
+            enableFollowLocation()
             runOnFirstFix {
                 runOnUiThread {
                     getMyLocation()?.let {
@@ -180,20 +233,20 @@ class MainActivity : AppCompatActivity() {
         }
         map.overlays.add(myLocation)
 
-        // Fallback extra (API 30+): tentar uma leitura pontual e centralizar
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val lm = getSystemService(LOCATION_SERVICE) as LocationManager
-            lm.getCurrentLocation(LocationManager.GPS_PROVIDER, null, mainExecutor) { loc ->
-                loc?.let {
-                    val here = GeoPoint(it.latitude, it.longitude)
-                    map.controller.setZoom(defaultZoom)
-                    map.controller.animateTo(here)
+            try {
+                lm.getCurrentLocation(LocationManager.GPS_PROVIDER, null, mainExecutor) { loc ->
+                    loc?.let {
+                        val here = GeoPoint(it.latitude, it.longitude)
+                        map.controller.setZoom(defaultZoom)
+                        map.controller.animateTo(here)
+                    }
                 }
-            }
+            } catch (_: SecurityException) { }
         }
     }
 
-    // ========== PERSISTÊNCIA / DESENHO ==========
     private fun loadPontosFromPrefs(): JSONArray {
         val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
         val s = sp.getString(pontosKey, "[]") ?: "[]"
@@ -206,12 +259,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun limparPontosDoTrabalho() {
-        getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
-            .edit()
-            .remove(pontosKey)
-            .apply()
-        // Mantém overlays de localização e o X; remove só os marcadores
-        map.overlays.removeAll { it is Marker }
+        getSharedPreferences("geoapp_prefs", MODE_PRIVATE).edit().remove(pontosKey).apply()
+        map.overlays.removeAll { it is Marker } // preserva alvo e overlay de localização
         map.invalidate()
         Toast.makeText(this, "Pontos apagados", Toast.LENGTH_SHORT).show()
     }
@@ -235,42 +284,101 @@ class MainActivity : AppCompatActivity() {
 
         for (i in start until n) {
             val jo = arr.getJSONObject(i)
-            val p = GeoPoint(jo.getDouble("lat"), jo.getDouble("lng"))
-            addMarker(p, "Ponto ${i + 1}")
+            val p = GeoPoint(jo.getDouble(PontoKeys.LAT), jo.getDouble(PontoKeys.LNG))
+            val title = "Ponto ${jo.optInt(PontoKeys.ID, i + 1)}"
+            addMarker(p, title, jo)
         }
         map.invalidate()
     }
 
-    private fun addMarker(p: GeoPoint, title: String) {
+    private fun addMarker(p: GeoPoint, title: String, data: JSONObject? = null) {
         val m = Marker(map)
         m.position = p
         m.title = title
+        m.relatedObject = data
+        m.setOnMarkerClickListener { marker, _ ->
+            val jo = marker.relatedObject as? JSONObject
+            if (jo != null) {
+                showPontoInfoDialog(jo)
+            } else {
+                val lat = marker.position.latitude
+                val lng = marker.position.longitude
+                showPontoInfoDialog(JSONObject()
+                    .put(PontoKeys.ID, "-")
+                    .put(PontoKeys.LAT, lat)
+                    .put(PontoKeys.LNG, lng)
+                    .put(PontoKeys.UMID, "-")
+                    .put(PontoKeys.TEMP, "-")
+                    .put(PontoKeys.PH, "-")
+                    .put(PontoKeys.N, "-")
+                    .put(PontoKeys.K, "-")
+                    .put(PontoKeys.P, "-")
+                )
+            }
+            true
+        }
         map.overlays.add(m)
     }
 
-    private fun addPonto(p: GeoPoint) {
-        addMarker(p, "Ponto ${(loadPontosFromPrefs().length() + 1)}")
+    private fun showPontoInfoDialog(jo: JSONObject) {
+        val view = layoutInflater.inflate(R.layout.dialog_ponto_info, null)
 
+        fun setText(id: Int, v: Any?) {
+            view.findViewById<android.widget.TextView>(id).text = (v ?: "-").toString()
+        }
+
+        setText(R.id.tvId,  jo.opt(PontoKeys.ID))
+        setText(R.id.tvLat, jo.optDouble(PontoKeys.LAT, Double.NaN).takeIf { it==it })
+        setText(R.id.tvLng, jo.optDouble(PontoKeys.LNG, Double.NaN).takeIf { it==it })
+        setText(R.id.tvUmid, jo.opt(PontoKeys.UMID))
+        setText(R.id.tvTemp, jo.opt(PontoKeys.TEMP))
+        setText(R.id.tvPh,   jo.opt(PontoKeys.PH))
+        setText(R.id.tvN,    jo.opt(PontoKeys.N))
+        setText(R.id.tvK,    jo.opt(PontoKeys.K))
+        setText(R.id.tvP,    jo.opt(PontoKeys.P))
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setView(view)
+            .setPositiveButton("Fechar", null)
+            .show()
+    }
+
+    private fun addPonto(p: GeoPoint) {
         val arr = loadPontosFromPrefs()
+        val id = nextPontoId(arr)
+
         val jo = JSONObject()
-            .put("lat", p.latitude)
-            .put("lng", p.longitude)
-            .put("ts", System.currentTimeMillis())
+            .put(PontoKeys.ID,  id)
+            .put(PontoKeys.LAT, p.latitude)
+            .put(PontoKeys.LNG, p.longitude)
+            .put(PontoKeys.TS,  System.currentTimeMillis())
+            .put(PontoKeys.UMID, "-")
+            .put(PontoKeys.TEMP, "-")
+            .put(PontoKeys.PH,   "-")
+            .put(PontoKeys.N,    "-")
+            .put(PontoKeys.K,    "-")
+            .put(PontoKeys.P,    "-")
+
         arr.put(jo)
         savePontosToPrefs(arr)
+
+        addMarker(p, "Ponto $id", jo)
 
         Toast.makeText(this, "Ponto salvo: ${formatGeo(p)}", Toast.LENGTH_SHORT).show()
         map.invalidate()
     }
+
 
     private fun formatGeo(p: GeoPoint): String {
         val df = DecimalFormat("0.000000")
         return "${df.format(p.latitude)}, ${df.format(p.longitude)}"
     }
 
-    // ========== AÇÕES DE BOTÃO ==========
+    private fun nextPontoId(arr: JSONArray): Int {
+        return arr.length() + 1
+    }
+
     fun btnNovoPonto(view: View) {
-        // Sempre salva o ponto sob o "X" (centro do mapa)
         val center = map.mapCenter
         val p = GeoPoint(center.latitude, center.longitude)
         addPonto(p)
@@ -313,7 +421,6 @@ class MainActivity : AppCompatActivity() {
         val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val safeName = if (nomeTrabalho.isBlank()) "trabalho" else nomeTrabalho.replace(Regex("[^a-zA-Z0-9_-]"), "_")
         val file = File(dir, "pontos_${safeName}_$ts.csv")
-
         try {
             FileWriter(file, false).use { fw ->
                 fw.appendLine("nome_trabalho,tipo_cultura,lat,lng,timestamp")
@@ -328,7 +435,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ========== CICLO DE VIDA (OSMDroid precisa disso) ==========
     override fun onResume() {
         super.onResume()
         map.onResume()
@@ -340,4 +446,6 @@ class MainActivity : AppCompatActivity() {
         map.onPause()
         super.onPause()
     }
+
+    fun btnVoltar(view: View) = finish()
 }

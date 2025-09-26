@@ -1,33 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black">
+    android:background="@color/black"
+    android:padding="0dp">
+
+    <ImageView
+        android:id="@+id/bgImage"
+        android:layout_width="500dp"
+        android:layout_height="400dp"
+        android:layout_centerInParent="true"
+        android:scaleType="centerCrop"
+        android:src="@drawable/bg_home" />
 
     <EditText
         android:id="@+id/edtNomeTrabalho"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="50dp"
         android:layout_marginEnd="24dp"
+        android:layout_marginTop="50dp"
         android:background="@color/white"
         android:hint="Nome do Trabalho"
         android:inputType="textCapWords"
         android:padding="12dp"
         android:textColor="@color/black"
-        android:textColorHint="@color/black"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:textColorHint="@color/black" />
 
     <EditText
         android:id="@+id/edtTipoCultura"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/edtNomeTrabalho"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
         android:layout_marginTop="12dp"
@@ -36,34 +42,45 @@
         android:inputType="textCapWords"
         android:padding="12dp"
         android:textColor="@color/black"
-        android:textColorHint="@color/black"
-        app:layout_constraintTop_toBottomOf="@id/edtNomeTrabalho"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:textColorHint="@color/black" />
 
     <com.google.android.material.switchmaterial.SwitchMaterial
         android:id="@+id/swGeoref"
-        android:layout_width="272dp"
-        android:layout_height="46dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/edtTipoCultura"
         android:layout_marginStart="24dp"
         android:layout_marginTop="16dp"
         android:text="Habilitar Georreferenciamento"
-        android:textColor="@android:color/white"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/edtTipoCultura" />
+        android:textColor="@android:color/white" />
+
+    <Button
+        android:id="@+id/btnVoltar"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="24dp"
+        android:layout_marginBottom="36dp"
+        android:backgroundTint="@color/white"
+        android:onClick="btnVoltar"
+        android:padding="20dp"
+        android:text="Voltar"
+        android:textColor="@color/black"
+        android:textSize="20sp" />
 
     <Button
         android:id="@+id/btnContinuar"
-        android:layout_width="210dp"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="36dp"
         android:backgroundTint="@color/white"
         android:onClick="btnContinuar"
         android:padding="20dp"
         android:text="Continuar"
         android:textColor="@color/black"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:textSize="20sp" />
+</RelativeLayout>

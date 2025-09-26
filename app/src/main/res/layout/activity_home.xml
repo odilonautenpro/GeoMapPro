@@ -1,59 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="35dp"
-    android:background="#000000">
+    android:background="#000000"
+    android:padding="0dp">
 
-    <Button
-        android:id="@+id/btnCarregar"
-        android:layout_width="0dp"
+    <ImageView
+        android:id="@+id/bgImage"
+        android:layout_width="500dp"
+        android:layout_height="400dp"
+        android:layout_centerInParent="true"
+        android:adjustViewBounds="true"
+        android:scaleType="centerCrop"
+        android:src="@drawable/bg_home" />
+
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Carregar Trabalho"
-        android:textSize="18sp"
-        android:textColor="@color/black"
-        android:backgroundTint="@color/white"
-        android:onClick="btnCarregar"
-        android:padding="16dp"
-        app:layout_constraintWidth_percent="0.3"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnNovo"
-        app:layout_constraintHorizontal_chainStyle="packed"
-        android:layout_margin="12dp"/>
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_marginBottom="16dp">
 
-    <Button
-        android:id="@+id/btnNovo"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Novo Trabalho"
-        android:textSize="18sp"
-        android:textColor="@color/black"
-        android:backgroundTint="@color/white"
-        android:onClick="btnNovo"
-        android:padding="16dp"
-        app:layout_constraintWidth_percent="0.3"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btnCarregar"
-        app:layout_constraintEnd_toStartOf="@id/btnAjustes"
-        android:layout_margin="12dp"/>
+        <Button
+            android:id="@+id/btnCarregar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Carregar Trabalho"
+            android:textSize="18sp"
+            android:textColor="@color/black"
+            android:backgroundTint="@color/white"
+            android:padding="12dp"
+            android:onClick="btnCarregar" />
 
-    <Button
-        android:id="@+id/btnAjustes"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Ajustes"
-        android:textSize="18sp"
-        android:textColor="@color/black"
-        android:backgroundTint="@color/white"
-        android:onClick="btnAjustes"
-        android:padding="16dp"
-        app:layout_constraintWidth_percent="0.3"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btnNovo"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="12dp"/>
+        <Button
+            android:id="@+id/btnNovo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Novo Trabalho"
+            android:textSize="18sp"
+            android:textColor="@color/black"
+            android:backgroundTint="@color/white"
+            android:padding="12dp"
+            android:onClick="btnNovo" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <Button
+            android:id="@+id/btnAjustes"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Ajustes"
+            android:textSize="18sp"
+            android:textColor="@color/black"
+            android:backgroundTint="@color/white"
+            android:padding="12dp"
+            android:onClick="btnAjustes" />
+    </LinearLayout>
+
+</RelativeLayout>
