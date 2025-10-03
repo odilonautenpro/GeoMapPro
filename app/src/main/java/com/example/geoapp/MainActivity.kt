@@ -34,8 +34,11 @@ import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.widget.Button
 
 class MainActivity : AppCompatActivity() {
+    private val sensorExec = java.util.concurrent.Executors.newSingleThreadExecutor()
+    @Volatile private var reading = false
     private lateinit var map: MapView
     private lateinit var myLocation: MyLocationNewOverlay
     private lateinit var crossOverlay: Overlay
@@ -58,6 +61,8 @@ class MainActivity : AppCompatActivity() {
         const val N    = "n"
         const val K    = "k"
         const val P    = "p"
+        const val SAL  = "sal"
+        const val SAVED = "sensorSaved"
     }
 
     private val requestLocationPerms =
@@ -309,15 +314,59 @@ class MainActivity : AppCompatActivity() {
                     .put(PontoKeys.LNG, lng)
                     .put(PontoKeys.UMID, "-")
                     .put(PontoKeys.TEMP, "-")
-                    .put(PontoKeys.PH, "-")
-                    .put(PontoKeys.N, "-")
-                    .put(PontoKeys.K, "-")
-                    .put(PontoKeys.P, "-")
+                    .put(PontoKeys.SAL,  "-")
+                    .put(PontoKeys.PH,   "-")
+                    .put(PontoKeys.N,    "-")
+                    .put(PontoKeys.K,    "-")
+                    .put(PontoKeys.P,    "-")
+                    .put(PontoKeys.SAVED, false)
                 )
             }
             true
         }
         map.overlays.add(m)
+    }
+
+    private fun atualizarPontoComLeituraPorId(idPonto: Int, leitura: JSONObject): Boolean {
+        val arr = loadPontosFromPrefs()
+        for (i in 0 until arr.length()) {
+            val o = arr.getJSONObject(i)
+            if (o.optInt(PontoKeys.ID, -1) == idPonto) {
+                o.put(PontoKeys.UMID, leitura.optString("umid", "-"))
+                o.put(PontoKeys.TEMP, leitura.optString("temp", "-"))
+                o.put(PontoKeys.SAL,  leitura.optString("sal",  "-"))
+                o.put(PontoKeys.PH,   leitura.optString("ph",   "-"))
+                o.put(PontoKeys.N,    leitura.optString("n",    "-"))
+                o.put(PontoKeys.K,    leitura.optString("k",    "-"))
+                o.put(PontoKeys.P,    leitura.optString("p",    "-"))
+                o.put(PontoKeys.SAVED, true)
+                arr.put(i, o)
+                savePontosToPrefs(arr)
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun apagarLeituraPorId(idPonto: Int): Boolean {
+        val arr = loadPontosFromPrefs()
+        for (i in 0 until arr.length()) {
+            val o = arr.getJSONObject(i)
+            if (o.optInt(PontoKeys.ID, -1) == idPonto) {
+                o.put(PontoKeys.UMID, "-")
+                o.put(PontoKeys.TEMP, "-")
+                o.put(PontoKeys.SAL,  "-")
+                o.put(PontoKeys.PH,   "-")
+                o.put(PontoKeys.N,    "-")
+                o.put(PontoKeys.K,    "-")
+                o.put(PontoKeys.P,    "-")
+                o.put(PontoKeys.SAVED, false)
+                arr.put(i, o)
+                savePontosToPrefs(arr)
+                return true
+            }
+        }
+        return false
     }
 
     private fun showPontoInfoDialog(jo: JSONObject) {
@@ -327,20 +376,236 @@ class MainActivity : AppCompatActivity() {
             view.findViewById<android.widget.TextView>(id).text = (v ?: "-").toString()
         }
 
+        val df = DecimalFormat("0.00000000")
+
         setText(R.id.tvId,  jo.opt(PontoKeys.ID))
-        setText(R.id.tvLat, jo.optDouble(PontoKeys.LAT, Double.NaN).takeIf { it==it })
-        setText(R.id.tvLng, jo.optDouble(PontoKeys.LNG, Double.NaN).takeIf { it==it })
+        setText(R.id.tvLat, jo.optDouble(PontoKeys.LAT, Double.NaN).takeIf { it==it }?.let { df.format(it) })
+        setText(R.id.tvLng, jo.optDouble(PontoKeys.LNG, Double.NaN).takeIf { it==it }?.let { df.format(it) })
         setText(R.id.tvUmid, jo.opt(PontoKeys.UMID))
         setText(R.id.tvTemp, jo.opt(PontoKeys.TEMP))
+        setText(R.id.tvSal,  jo.opt(PontoKeys.SAL))
         setText(R.id.tvPh,   jo.opt(PontoKeys.PH))
         setText(R.id.tvN,    jo.opt(PontoKeys.N))
         setText(R.id.tvK,    jo.opt(PontoKeys.K))
         setText(R.id.tvP,    jo.opt(PontoKeys.P))
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val btnGravar = view.findViewById<Button>(R.id.btnGravar)
+        val btnApagar = view.findViewById<Button>(R.id.btnApagar)
+        btnApagar.isEnabled = jo.optBoolean(PontoKeys.SAVED, false)
+
+        var lastReading: SensorReading? = null
+        var poller: RootSerialPoller? = null
+
+        data class Acum(
+            var n:Int = 0,
+            var umid:Double = 0.0,
+            var temp:Double = 0.0,
+            var sal:Double  = 0.0,
+            var ph:Double   = 0.0,
+            var nN:Double   = 0.0,
+            var pP:Double   = 0.0,
+            var kK:Double   = 0.0
+        )
+        var acum = Acum()
+
+        fun numFromStr(s: String): Double {
+            val t = s.replace("%","")
+                .replace("°C","")
+                .replace(",",".")
+                .trim()
+            return t.toDoubleOrNull() ?: Double.NaN
+        }
+
+        fun acumular(r: SensorReading) {
+            val u = numFromStr(r.umid)
+            val t = numFromStr(r.temp)
+            val s = numFromStr(r.sal)
+            val pH= numFromStr(r.ph)
+            val n = numFromStr(r.n)
+            val p = numFromStr(r.p)
+            val k = numFromStr(r.k)
+
+            // só soma se conseguiu converter (evita NaN)
+            if (!u.isNaN()) acum.umid += u
+            if (!t.isNaN()) acum.temp += t
+            if (!s.isNaN()) acum.sal  += s
+            if (!pH.isNaN())acum.ph   += pH
+            if (!n.isNaN()) acum.nN   += n
+            if (!p.isNaN()) acum.pP   += p
+            if (!k.isNaN()) acum.kK   += k
+            acum.n++
+        }
+
+        fun mediaComoReading(ac: Acum): SensorReading? {
+            if (ac.n <= 0) return null
+            val nn = ac.n.toDouble()
+            return SensorReading(
+                umid = String.format(Locale.US, "%.1f%%", ac.umid/nn),
+                temp = String.format(Locale.US, "%.1f°C", ac.temp/nn),
+                sal  = ((ac.sal/nn).toLong()).toString(),  // EC inteiro
+                ph   = String.format(Locale.US, "%.1f", ac.ph/nn),
+                n    = ((ac.nN/nn).toLong()).toString(),
+                p    = ((ac.pP/nn).toLong()).toString(),
+                k    = ((ac.kK/nn).toLong()).toString()
+            )
+        }
+
+        val jaSalvo = jo.optBoolean(PontoKeys.SAVED, false)
+        btnGravar.isEnabled = !jaSalvo
+        if (jaSalvo) btnGravar.text = "Já gravado"
+        btnApagar.isEnabled = jaSalvo
+
+        if (!jaSalvo) {
+            poller = RootSerialPoller(
+                device = "/dev/ttyS7",
+                periodSeconds = 2.0,
+                onReading = { r ->
+                    runOnUiThread {
+                        lastReading = r
+                        setText(R.id.tvUmid, r.umid)
+                        setText(R.id.tvTemp, r.temp)
+                        setText(R.id.tvSal,  r.sal)
+                        setText(R.id.tvPh,   r.ph)
+                        setText(R.id.tvN,    r.n)
+                        setText(R.id.tvK,    r.k)
+                        setText(R.id.tvP,    r.p)
+
+                        acumular(r)
+
+                        if (!jo.optBoolean(PontoKeys.SAVED, false)) {
+                            btnGravar.isEnabled = true
+                        }
+                    }
+                },
+                onError = { msg -> android.util.Log.e("GeoApp", msg) }
+            )
+        }
+
+        val dlg = AlertDialog.Builder(this)
             .setView(view)
-            .setPositiveButton("Fechar", null)
-            .show()
+            .setOnDismissListener { poller?.stop() }
+            .create()
+
+        dlg.setOnShowListener {
+            if (!jaSalvo) {
+                acum = Acum()
+                poller?.start()
+            }
+
+        }
+
+        btnGravar.setOnClickListener {
+            if (jo.optBoolean(PontoKeys.SAVED, false)) return@setOnClickListener
+
+            val id = jo.optInt(PontoKeys.ID, -1)
+
+            // --- NOVO: pega média do que acumulou até aqui ---
+            val r = mediaComoReading(acum)
+
+            if (id <= 0 || r == null) {
+                Toast.makeText(this, "Sem leituras suficientes para gravar", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val ok = atualizarPontoComLeituraPorId(id, r.toJson())
+            if (ok) {
+                jo.put(PontoKeys.UMID, r.umid)
+                jo.put(PontoKeys.TEMP, r.temp)
+                jo.put(PontoKeys.SAL,  r.sal)
+                jo.put(PontoKeys.PH,   r.ph)
+                jo.put(PontoKeys.N,    r.n)
+                jo.put(PontoKeys.K,    r.k)
+                jo.put(PontoKeys.P,    r.p)
+                jo.put(PontoKeys.SAVED, true)
+
+                setText(R.id.tvUmid, r.umid)
+                setText(R.id.tvTemp, r.temp)
+                setText(R.id.tvSal,  r.sal)
+                setText(R.id.tvPh,   r.ph)
+                setText(R.id.tvN,    r.n)
+                setText(R.id.tvK,    r.k)
+                setText(R.id.tvP,    r.p)
+
+                btnGravar.isEnabled = false
+                btnGravar.text = "Já gravado"
+                btnApagar.isEnabled = true
+                poller?.stop()  // mantém a lógica atual de parar tudo ao gravar
+                Toast.makeText(this, "Média das leituras gravada no ponto #$id", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Não foi possível localizar o ponto", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnApagar.setOnClickListener {
+            val id = jo.optInt(PontoKeys.ID, -1)
+            if (id <= 0) {
+                Toast.makeText(this, "Ponto inválido", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            AlertDialog.Builder(this)
+                .setTitle("Apagar gravação do ponto #$id?")
+                .setMessage("Isso limpará os valores de sensor salvos para este ponto.")
+                .setPositiveButton("Apagar") { _, _ ->
+                    val ok = apagarLeituraPorId(id)
+                    if (!ok) {
+                        Toast.makeText(this, "Não foi possível apagar a gravação", Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+
+                    acum = Acum()
+
+                    jo.put(PontoKeys.UMID, "-")
+                    jo.put(PontoKeys.TEMP, "-")
+                    jo.put(PontoKeys.SAL,  "-")
+                    jo.put(PontoKeys.PH,   "-")
+                    jo.put(PontoKeys.N,    "-")
+                    jo.put(PontoKeys.K,    "-")
+                    jo.put(PontoKeys.P,    "-")
+                    jo.put(PontoKeys.SAVED, false)
+
+                    setText(R.id.tvUmid, "-")
+                    setText(R.id.tvTemp, "-")
+                    setText(R.id.tvSal,  "-")
+                    setText(R.id.tvPh,   "-")
+                    setText(R.id.tvN,    "-")
+                    setText(R.id.tvK,    "-")
+                    setText(R.id.tvP,    "-")
+
+                    btnGravar.isEnabled = true
+                    btnGravar.text = "Gravar"
+                    btnApagar.isEnabled = false
+
+                    if (poller == null) {
+                        poller = RootSerialPoller(
+                            device = "/dev/ttyS7",
+                            periodSeconds = 2.0,
+                            onReading = { r ->
+                                runOnUiThread {
+                                    lastReading = r
+                                    setText(R.id.tvUmid, r.umid)
+                                    setText(R.id.tvTemp, r.temp)
+                                    setText(R.id.tvSal,  r.sal)
+                                    setText(R.id.tvPh,   r.ph)
+                                    setText(R.id.tvN,    r.n)
+                                    setText(R.id.tvK,    r.k)
+                                    setText(R.id.tvP,    r.p)
+
+                                    acumular(r)
+
+                                    btnGravar.isEnabled = true
+                                }
+                            },
+                            onError = { msg -> android.util.Log.e("GeoApp", msg) }
+                        )
+                    }
+                    poller?.start()
+                    Toast.makeText(this, "Gravação apagada no ponto #$id", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
+        dlg.show()
     }
 
     private fun addPonto(p: GeoPoint) {
@@ -358,6 +623,8 @@ class MainActivity : AppCompatActivity() {
             .put(PontoKeys.N,    "-")
             .put(PontoKeys.K,    "-")
             .put(PontoKeys.P,    "-")
+            .put(PontoKeys.SAL, "-")
+            .put(PontoKeys.SAVED, false)
 
         arr.put(jo)
         savePontosToPrefs(arr)
@@ -417,16 +684,40 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Nada para exportar", Toast.LENGTH_SHORT).show()
             return
         }
+
+        fun csv(v: Any?): String {
+            val s = (v ?: "").toString()
+            return if (s.contains(',') || s.contains('"') || s.contains('\n')) {
+                "\"" + s.replace("\"", "\"\"") + "\""
+            } else s
+        }
+
         val dir = File(getExternalFilesDir(null), "exports").apply { if (!exists()) mkdirs() }
         val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val safeName = if (nomeTrabalho.isBlank()) "trabalho" else nomeTrabalho.replace(Regex("[^a-zA-Z0-9_-]"), "_")
         val file = File(dir, "pontos_${safeName}_$ts.csv")
+
         try {
             FileWriter(file, false).use { fw ->
-                fw.appendLine("nome_trabalho,tipo_cultura,lat,lng,timestamp")
+                fw.appendLine("nome_trabalho,tipo_cultura,lat,lng,timestamp,umid,temp,sal,ph,n,p,k,sensorSaved")
                 for (i in 0 until arr.length()) {
                     val jo = arr.getJSONObject(i)
-                    fw.appendLine("\"$nomeTrabalho\",\"$tipoCultura\",${jo.getDouble("lat")},${jo.getDouble("lng")},${jo.optLong("ts",0)}")
+                    val linha = listOf(
+                        nomeTrabalho,
+                        tipoCultura,
+                        jo.optDouble("lat", Double.NaN).toString(),
+                        jo.optDouble("lng", Double.NaN).toString(),
+                        jo.optLong("ts", 0L).toString(),
+                        jo.optString("umid", "-"),
+                        jo.optString("temp", "-"),
+                        jo.optString("sal", "-"),
+                        jo.optString("ph", "-"),
+                        jo.optString("n", "-"),
+                        jo.optString("p", "-"),
+                        jo.optString("k", "-"),
+                        jo.optBoolean("sensorSaved", false).toString()
+                    ).joinToString(",") { csv(it) }
+                    fw.appendLine(linha)
                 }
             }
             Toast.makeText(this, "Exportado: ${file.absolutePath}", Toast.LENGTH_LONG).show()

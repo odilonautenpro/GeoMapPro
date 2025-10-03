@@ -9,62 +9,280 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tvTitulo"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Informações do Ponto"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:paddingBottom="8dp" />
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="16dp">
 
-        <TextView
+            <Button
+                android:id="@+id/btnGravar"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Gravar" />
+
+            <Button
+                android:id="@+id/btnApagar"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Apagar gravação" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="ID do Ponto" />
-        <TextView
-            android:id="@+id/tvId"
+            android:orientation="horizontal"
+            android:paddingTop="12dp"
+            android:gravity="center_vertical"
+            android:weightSum="3">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingEnd="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ID"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/tvId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textStyle="bold"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingHorizontal="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Latitude"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/tvLat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textStyle="bold"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingStart="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Longitude"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/tvLng"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textStyle="bold"
+                    android:textSize="16sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <GridLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="-" android:textStyle="bold"
-            android:paddingBottom="8dp" />
+            android:columnCount="2"
+            android:useDefaultMargins="true"
+            android:alignmentMode="alignMargins"
+            android:paddingTop="12dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Latitude" />
-        <TextView
-            android:id="@+id/tvLat"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="-" android:paddingBottom="8dp" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="110dp"
+                android:layout_columnWeight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="12dp"
+                android:background="@drawable/tile_bg"
+                android:backgroundTint="#3CB371">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Temperatura (°C)"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp" />
+                <TextView
+                    android:id="@+id/tvTemp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Longitude" />
-        <TextView
-            android:id="@+id/tvLng"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="-" android:paddingBottom="8dp" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="110dp"
+                android:layout_columnWeight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="12dp"
+                android:background="@drawable/tile_bg"
+                android:backgroundTint="#3F51B5">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Umidade (%)"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp" />
+                <TextView
+                    android:id="@+id/tvUmid"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Umidade (%)" />
-        <TextView android:id="@+id/tvUmid" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-" android:paddingBottom="8dp"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="110dp"
+                android:layout_columnWeight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="12dp"
+                android:background="@drawable/tile_bg"
+                android:backgroundTint="#8E44AD">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Condutividade (EC) µS/cm"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/tvSal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Temperatura (°C)" />
-        <TextView android:id="@+id/tvTemp" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-" android:paddingBottom="8dp"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="110dp"
+                android:layout_columnWeight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="12dp"
+                android:background="@drawable/tile_bg"
+                android:backgroundTint="#FFA000">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="pH"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp" />
+                <TextView
+                    android:id="@+id/tvPh"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="pH" />
-        <TextView android:id="@+id/tvPh" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-" android:paddingBottom="8dp"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="110dp"
+                android:layout_columnWeight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="12dp"
+                android:background="@drawable/tile_bg"
+                android:backgroundTint="#EC407A">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nitrogênio (N) mg/kg"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/tvN"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nitrogênio (mg/kg)" />
-        <TextView android:id="@+id/tvN" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-" android:paddingBottom="8dp"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="110dp"
+                android:layout_columnWeight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="12dp"
+                android:background="@drawable/tile_bg"
+                android:backgroundTint="#42A5F5">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Fósforo (P) mg/kg"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/tvP"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Potássio (mg/kg)" />
-        <TextView android:id="@+id/tvK" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-" android:paddingBottom="8dp"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="110dp"
+                android:layout_columnWeight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="12dp"
+                android:background="@drawable/tile_bg"
+                android:backgroundTint="#26C6DA">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Potássio (K) mg/kg"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/tvK"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Fósforo (mg/kg)" />
-        <TextView android:id="@+id/tvP" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-" android:paddingBottom="8dp"/>
+        </GridLayout>
     </LinearLayout>
 </ScrollView>
