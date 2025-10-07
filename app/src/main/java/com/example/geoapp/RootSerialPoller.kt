@@ -134,25 +134,27 @@ class RootSerialPoller(
         }
         val r0 = u16(0) // umidade *10
         val r1 = u16(1) // temperatura *10
-        val r2 = u16(2) // sal/EC (inteiro)
+        val r2 = u16(2) // EC (inteiro)
         val r3 = u16(3) // pH *10
         val r4 = u16(4) // N
         val r5 = u16(5) // P
         val r6 = u16(6) // K
+        val r7 = u16(7) // salinity
 
         val umidStr = String.format(Locale.US, "%.1f%%", r0 / 10.0)
         val tempStr = String.format(Locale.US, "%.1f°C", r1 / 10.0)
-        val salStr = r2.toString()
+        val ecStr = r2.toString()
         val phStr = String.format(Locale.US, "%.1f", r3 / 10.0)
 
         return SensorReading(
             umid = umidStr,
             temp = tempStr,
-            sal = salStr,
+            ec = ecStr,
             ph = phStr,
             n = r4.toString(),
             p = r5.toString(),
-            k = r6.toString()
+            k = r6.toString(),
+            salinity = r7.toString()
         )
     }
 

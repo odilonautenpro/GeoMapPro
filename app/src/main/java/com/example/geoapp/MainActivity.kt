@@ -47,8 +47,7 @@ class MainActivity : AppCompatActivity() {
     private var georefHabilitado: Boolean = false
     private val MAX_MARKERS_TO_DRAW = 500
     private val MAX_POINTS_TO_KEEP  = 5000
-    private val pontosKey: String
-        get() = "pontos_${nomeTrabalho.ifEmpty { "default" }}"
+    private val pontosKey: String get() = "pontos_${nomeTrabalho.ifEmpty { "default" }}"
     private val FIXED_FALLBACK = GeoPoint(-26.1955215, -52.6710228)
     private object PontoKeys {
         const val ID   = "id"
@@ -61,8 +60,62 @@ class MainActivity : AppCompatActivity() {
         const val N    = "n"
         const val K    = "k"
         const val P    = "p"
-        const val SAL  = "sal"
+        const val EC   = "ec"
+        const val SALINITY = "salinity"
         const val SAVED = "sensorSaved"
+    }
+    private val activePollers = java.util.Collections.synchronizedSet(mutableSetOf<RootSerialPoller>())
+    private var globalPoller: RootSerialPoller? = null
+    @Volatile private var lastReading: SensorReading? = null
+
+    private fun startGlobalPoller(
+        device: String = "/dev/ttyS7",
+        periodSeconds: Double = 2.0,
+        baud: Int = 9600
+    ) {
+        if (globalPoller != null) return
+        globalPoller = RootSerialPoller(
+            device = device,
+            periodSeconds = periodSeconds,
+            baud = baud,
+            onReading = { r ->
+                lastReading = r
+            },
+            onError = { msg -> android.util.Log.e("GeoApp", msg) }
+        ).also { it.start() }
+    }
+
+    private fun stopGlobalPoller() {
+        try { globalPoller?.stop() } catch (_: Throwable) {}
+        globalPoller = null
+    }
+
+    private fun stopAllSerials() {
+        synchronized(activePollers) {
+            activePollers.forEach { p ->
+                try { p.stop() } catch (_: Throwable) {}
+            }
+            activePollers.clear()
+        }
+    }
+
+    private fun newPoller(
+        device: String = "/dev/ttyS7",
+        periodSeconds: Double = 2.0,
+        baud: Int = 9600,
+        onReading: (SensorReading) -> Unit,
+        onError: (String) -> Unit
+    ): RootSerialPoller {
+        stopAllSerials()
+        val p = RootSerialPoller(
+            device = device,
+            periodSeconds = periodSeconds,
+            baud = baud,
+            onReading = onReading,
+            onError = onError
+        )
+        activePollers += p
+        return p
     }
 
     private val requestLocationPerms =
@@ -101,6 +154,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        startGlobalPoller(device = "/dev/ttyS7", periodSeconds = 2.0, baud = 9600)
 
         nomeTrabalho     = intent.getStringExtra("nome_trabalho").orEmpty()
         tipoCultura      = intent.getStringExtra("tipo_cultura").orEmpty()
@@ -131,22 +185,18 @@ class MainActivity : AppCompatActivity() {
             map.controller.setCenter(FIXED_FALLBACK)
         }
 
-        // Long-press em "Listar Pontos" limpa os pontos do trabalho
         findViewById<View>(R.id.btnListarPontos).setOnLongClickListener {
             limparPontosDoTrabalho()
             true
         }
 
-        // Desenha pontos salvos
         desenharPontosDoPrefs()
     }
 
     private fun setupOfflineMapOrWarn() {
-        // Necessário pelo Mapsforge
         AndroidGraphicFactory.createInstance(application)
         MapsForgeTileSource.createInstance(application)
 
-        // Espera-se o arquivo em: Android/data/<pkg>/files/maps/brazil.map
         val mapsDir = File(getExternalFilesDir("maps"), "")
         val mapFile = File(mapsDir, "brazil.map")
 
@@ -265,7 +315,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun limparPontosDoTrabalho() {
         getSharedPreferences("geoapp_prefs", MODE_PRIVATE).edit().remove(pontosKey).apply()
-        map.overlays.removeAll { it is Marker } // preserva alvo e overlay de localização
+        map.overlays.removeAll { it is Marker }
         map.invalidate()
         Toast.makeText(this, "Pontos apagados", Toast.LENGTH_SHORT).show()
     }
@@ -314,11 +364,12 @@ class MainActivity : AppCompatActivity() {
                     .put(PontoKeys.LNG, lng)
                     .put(PontoKeys.UMID, "-")
                     .put(PontoKeys.TEMP, "-")
-                    .put(PontoKeys.SAL,  "-")
+                    .put(PontoKeys.EC,  "-")
                     .put(PontoKeys.PH,   "-")
                     .put(PontoKeys.N,    "-")
                     .put(PontoKeys.K,    "-")
                     .put(PontoKeys.P,    "-")
+                    .put(PontoKeys.SALINITY, "-")
                     .put(PontoKeys.SAVED, false)
                 )
             }
@@ -334,11 +385,12 @@ class MainActivity : AppCompatActivity() {
             if (o.optInt(PontoKeys.ID, -1) == idPonto) {
                 o.put(PontoKeys.UMID, leitura.optString("umid", "-"))
                 o.put(PontoKeys.TEMP, leitura.optString("temp", "-"))
-                o.put(PontoKeys.SAL,  leitura.optString("sal",  "-"))
+                o.put(PontoKeys.EC,   leitura.optString("ec",   "-"))
                 o.put(PontoKeys.PH,   leitura.optString("ph",   "-"))
                 o.put(PontoKeys.N,    leitura.optString("n",    "-"))
                 o.put(PontoKeys.K,    leitura.optString("k",    "-"))
                 o.put(PontoKeys.P,    leitura.optString("p",    "-"))
+                o.put(PontoKeys.SALINITY, leitura.optString("salinity", "-"))
                 o.put(PontoKeys.SAVED, true)
                 arr.put(i, o)
                 savePontosToPrefs(arr)
@@ -355,11 +407,12 @@ class MainActivity : AppCompatActivity() {
             if (o.optInt(PontoKeys.ID, -1) == idPonto) {
                 o.put(PontoKeys.UMID, "-")
                 o.put(PontoKeys.TEMP, "-")
-                o.put(PontoKeys.SAL,  "-")
+                o.put(PontoKeys.EC,   "-")
                 o.put(PontoKeys.PH,   "-")
                 o.put(PontoKeys.N,    "-")
                 o.put(PontoKeys.K,    "-")
                 o.put(PontoKeys.P,    "-")
+                o.put(PontoKeys.SALINITY, "-")
                 o.put(PontoKeys.SAVED, false)
                 arr.put(i, o)
                 savePontosToPrefs(arr)
@@ -370,41 +423,44 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPontoInfoDialog(jo: JSONObject) {
+        stopAllSerials()
         val view = layoutInflater.inflate(R.layout.dialog_ponto_info, null)
+        val tvLeitura = view.findViewById<android.widget.TextView>(R.id.tvLeitura)
+        var leituraIdx = 0
+        tvLeitura.text = "-"
 
         fun setText(id: Int, v: Any?) {
             view.findViewById<android.widget.TextView>(id).text = (v ?: "-").toString()
         }
 
-        val df = DecimalFormat("0.00000000")
+        val df = DecimalFormat("0.000000")
 
         setText(R.id.tvId,  jo.opt(PontoKeys.ID))
         setText(R.id.tvLat, jo.optDouble(PontoKeys.LAT, Double.NaN).takeIf { it==it }?.let { df.format(it) })
         setText(R.id.tvLng, jo.optDouble(PontoKeys.LNG, Double.NaN).takeIf { it==it }?.let { df.format(it) })
         setText(R.id.tvUmid, jo.opt(PontoKeys.UMID))
         setText(R.id.tvTemp, jo.opt(PontoKeys.TEMP))
-        setText(R.id.tvSal,  jo.opt(PontoKeys.SAL))
+        setText(R.id.tvEc,   jo.opt(PontoKeys.EC))
         setText(R.id.tvPh,   jo.opt(PontoKeys.PH))
         setText(R.id.tvN,    jo.opt(PontoKeys.N))
         setText(R.id.tvK,    jo.opt(PontoKeys.K))
         setText(R.id.tvP,    jo.opt(PontoKeys.P))
+        setText(R.id.salinity, jo.opt(PontoKeys.SALINITY))
 
         val btnGravar = view.findViewById<Button>(R.id.btnGravar)
         val btnApagar = view.findViewById<Button>(R.id.btnApagar)
         btnApagar.isEnabled = jo.optBoolean(PontoKeys.SAVED, false)
 
-        var lastReading: SensorReading? = null
-        var poller: RootSerialPoller? = null
-
         data class Acum(
             var n:Int = 0,
             var umid:Double = 0.0,
             var temp:Double = 0.0,
-            var sal:Double  = 0.0,
+            var ec:Double  = 0.0,
             var ph:Double   = 0.0,
             var nN:Double   = 0.0,
             var pP:Double   = 0.0,
-            var kK:Double   = 0.0
+            var kK:Double   = 0.0,
+            var salinity:Double = 0.0
         )
         var acum = Acum()
 
@@ -419,20 +475,21 @@ class MainActivity : AppCompatActivity() {
         fun acumular(r: SensorReading) {
             val u = numFromStr(r.umid)
             val t = numFromStr(r.temp)
-            val s = numFromStr(r.sal)
+            val ec = numFromStr(r.ec)
             val pH= numFromStr(r.ph)
             val n = numFromStr(r.n)
             val p = numFromStr(r.p)
             val k = numFromStr(r.k)
+            val s = numFromStr(r.salinity)
 
-            // só soma se conseguiu converter (evita NaN)
             if (!u.isNaN()) acum.umid += u
             if (!t.isNaN()) acum.temp += t
-            if (!s.isNaN()) acum.sal  += s
+            if (!ec.isNaN()) acum.ec  += ec
             if (!pH.isNaN())acum.ph   += pH
             if (!n.isNaN()) acum.nN   += n
             if (!p.isNaN()) acum.pP   += p
             if (!k.isNaN()) acum.kK   += k
+            if (!s.isNaN()) acum.salinity += s
             acum.n++
         }
 
@@ -442,11 +499,12 @@ class MainActivity : AppCompatActivity() {
             return SensorReading(
                 umid = String.format(Locale.US, "%.1f%%", ac.umid/nn),
                 temp = String.format(Locale.US, "%.1f°C", ac.temp/nn),
-                sal  = ((ac.sal/nn).toLong()).toString(),  // EC inteiro
+                ec   = ((ac.ec/nn).toLong()).toString(),
                 ph   = String.format(Locale.US, "%.1f", ac.ph/nn),
                 n    = ((ac.nN/nn).toLong()).toString(),
                 p    = ((ac.pP/nn).toLong()).toString(),
-                k    = ((ac.kK/nn).toLong()).toString()
+                k    = ((ac.kK/nn).toLong()).toString(),
+                salinity = ((ac.salinity/nn).toLong()).toString()
             )
         }
 
@@ -455,51 +513,59 @@ class MainActivity : AppCompatActivity() {
         if (jaSalvo) btnGravar.text = "Já gravado"
         btnApagar.isEnabled = jaSalvo
 
-        if (!jaSalvo) {
-            poller = RootSerialPoller(
-                device = "/dev/ttyS7",
-                periodSeconds = 2.0,
-                onReading = { r ->
-                    runOnUiThread {
-                        lastReading = r
-                        setText(R.id.tvUmid, r.umid)
-                        setText(R.id.tvTemp, r.temp)
-                        setText(R.id.tvSal,  r.sal)
-                        setText(R.id.tvPh,   r.ph)
-                        setText(R.id.tvN,    r.n)
-                        setText(R.id.tvK,    r.k)
-                        setText(R.id.tvP,    r.p)
+        var uiTimer: java.util.Timer? = null
 
-                        acumular(r)
-
-                        if (!jo.optBoolean(PontoKeys.SAVED, false)) {
-                            btnGravar.isEnabled = true
-                        }
-                    }
-                },
-                onError = { msg -> android.util.Log.e("GeoApp", msg) }
-            )
+        fun aplicarLeituraNaUI(r: SensorReading) {
+            setText(R.id.tvUmid, r.umid)
+            setText(R.id.tvTemp, r.temp)
+            setText(R.id.tvEc,   r.ec)
+            setText(R.id.tvPh,   r.ph)
+            setText(R.id.tvN,    r.n)
+            setText(R.id.tvK,    r.k)
+            setText(R.id.tvP,    r.p)
+            setText(R.id.salinity, r.salinity)
+            leituraIdx += 1
+            tvLeitura.text = "$leituraIdx"
+            acumular(r)
         }
+
+        fun startUiTimer(periodMs: Long = 2000L) {
+            uiTimer?.cancel()
+            uiTimer = java.util.Timer().apply {
+                scheduleAtFixedRate(object : java.util.TimerTask() {
+                    override fun run() {
+                        val r = this@MainActivity.lastReading ?: return
+                        runOnUiThread { aplicarLeituraNaUI(r) }
+                    }
+                }, 0L, periodMs)
+            }
+        }
+
+        if (!jaSalvo) startUiTimer()
 
         val dlg = AlertDialog.Builder(this)
             .setView(view)
-            .setOnDismissListener { poller?.stop() }
+            .setOnDismissListener {
+                try { uiTimer?.cancel() } catch (_: Throwable) {}
+                uiTimer = null
+            }
             .create()
 
         dlg.setOnShowListener {
             if (!jaSalvo) {
                 acum = Acum()
-                poller?.start()
+                leituraIdx = 0
+                tvLeitura.text = "-"
+            } else {
+                tvLeitura.text = "-"
             }
-
         }
 
         btnGravar.setOnClickListener {
+            stopAllSerials()
             if (jo.optBoolean(PontoKeys.SAVED, false)) return@setOnClickListener
 
             val id = jo.optInt(PontoKeys.ID, -1)
-
-            // --- NOVO: pega média do que acumulou até aqui ---
             val r = mediaComoReading(acum)
 
             if (id <= 0 || r == null) {
@@ -511,25 +577,32 @@ class MainActivity : AppCompatActivity() {
             if (ok) {
                 jo.put(PontoKeys.UMID, r.umid)
                 jo.put(PontoKeys.TEMP, r.temp)
-                jo.put(PontoKeys.SAL,  r.sal)
+                jo.put(PontoKeys.EC,   r.ec)
                 jo.put(PontoKeys.PH,   r.ph)
                 jo.put(PontoKeys.N,    r.n)
                 jo.put(PontoKeys.K,    r.k)
                 jo.put(PontoKeys.P,    r.p)
+                jo.put(PontoKeys.SALINITY, r.salinity)
                 jo.put(PontoKeys.SAVED, true)
 
                 setText(R.id.tvUmid, r.umid)
                 setText(R.id.tvTemp, r.temp)
-                setText(R.id.tvSal,  r.sal)
+                setText(R.id.tvEc,   r.ec)
                 setText(R.id.tvPh,   r.ph)
                 setText(R.id.tvN,    r.n)
                 setText(R.id.tvK,    r.k)
                 setText(R.id.tvP,    r.p)
+                setText(R.id.salinity, r.salinity)
+
+                tvLeitura.text = "Total: $leituraIdx"
 
                 btnGravar.isEnabled = false
                 btnGravar.text = "Já gravado"
                 btnApagar.isEnabled = true
-                poller?.stop()  // mantém a lógica atual de parar tudo ao gravar
+
+                uiTimer?.cancel()
+                uiTimer = null
+
                 Toast.makeText(this, "Média das leituras gravada no ponto #$id", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "Não foi possível localizar o ponto", Toast.LENGTH_SHORT).show()
@@ -537,6 +610,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnApagar.setOnClickListener {
+            stopAllSerials()
             val id = jo.optInt(PontoKeys.ID, -1)
             if (id <= 0) {
                 Toast.makeText(this, "Ponto inválido", Toast.LENGTH_SHORT).show()
@@ -553,53 +627,40 @@ class MainActivity : AppCompatActivity() {
                         return@setPositiveButton
                     }
 
-                    acum = Acum()
+                    var acum2 = Acum()
+
+                    leituraIdx = 0
+                    tvLeitura.text = "-"
 
                     jo.put(PontoKeys.UMID, "-")
                     jo.put(PontoKeys.TEMP, "-")
-                    jo.put(PontoKeys.SAL,  "-")
+                    jo.put(PontoKeys.EC,   "-")
                     jo.put(PontoKeys.PH,   "-")
                     jo.put(PontoKeys.N,    "-")
                     jo.put(PontoKeys.K,    "-")
                     jo.put(PontoKeys.P,    "-")
+                    jo.put(PontoKeys.SALINITY, "-")
                     jo.put(PontoKeys.SAVED, false)
 
                     setText(R.id.tvUmid, "-")
                     setText(R.id.tvTemp, "-")
-                    setText(R.id.tvSal,  "-")
+                    setText(R.id.tvEc,   "-")
                     setText(R.id.tvPh,   "-")
                     setText(R.id.tvN,    "-")
                     setText(R.id.tvK,    "-")
                     setText(R.id.tvP,    "-")
+                    setText(R.id.salinity, "-")
 
                     btnGravar.isEnabled = true
                     btnGravar.text = "Gravar"
                     btnApagar.isEnabled = false
 
-                    if (poller == null) {
-                        poller = RootSerialPoller(
-                            device = "/dev/ttyS7",
-                            periodSeconds = 2.0,
-                            onReading = { r ->
-                                runOnUiThread {
-                                    lastReading = r
-                                    setText(R.id.tvUmid, r.umid)
-                                    setText(R.id.tvTemp, r.temp)
-                                    setText(R.id.tvSal,  r.sal)
-                                    setText(R.id.tvPh,   r.ph)
-                                    setText(R.id.tvN,    r.n)
-                                    setText(R.id.tvK,    r.k)
-                                    setText(R.id.tvP,    r.p)
-
-                                    acumular(r)
-
-                                    btnGravar.isEnabled = true
-                                }
-                            },
-                            onError = { msg -> android.util.Log.e("GeoApp", msg) }
-                        )
-                    }
-                    poller?.start()
+                    try { uiTimer?.cancel() } catch (_: Throwable) {}
+                    uiTimer = null
+                    acum2 = Acum()
+                    leituraIdx = 0
+                    tvLeitura.text = "-"
+                    startUiTimer()
                     Toast.makeText(this, "Gravação apagada no ponto #$id", Toast.LENGTH_SHORT).show()
                 }
                 .setNegativeButton("Cancelar", null)
@@ -609,6 +670,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun addPonto(p: GeoPoint) {
+        stopAllSerials()
         val arr = loadPontosFromPrefs()
         val id = nextPontoId(arr)
 
@@ -623,7 +685,8 @@ class MainActivity : AppCompatActivity() {
             .put(PontoKeys.N,    "-")
             .put(PontoKeys.K,    "-")
             .put(PontoKeys.P,    "-")
-            .put(PontoKeys.SAL, "-")
+            .put(PontoKeys.EC, "-")
+            .put(PontoKeys.SALINITY, "-")
             .put(PontoKeys.SAVED, false)
 
         arr.put(jo)
@@ -635,7 +698,6 @@ class MainActivity : AppCompatActivity() {
         map.invalidate()
     }
 
-
     private fun formatGeo(p: GeoPoint): String {
         val df = DecimalFormat("0.000000")
         return "${df.format(p.latitude)}, ${df.format(p.longitude)}"
@@ -646,12 +708,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun btnNovoPonto(view: View) {
+        stopAllSerials()
         val center = map.mapCenter
         val p = GeoPoint(center.latitude, center.longitude)
         addPonto(p)
     }
 
     fun btnListarPontos(view: View) {
+        stopAllSerials()
         val arr = loadPontosFromPrefs()
         if (arr.length() == 0) {
             Toast.makeText(this, "Nenhum ponto salvo", Toast.LENGTH_SHORT).show()
@@ -667,6 +731,7 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Pontos de $nomeTrabalho")
             .setItems(labels) { _, which ->
+                stopAllSerials()
                 val jo = arr.getJSONObject(which)
                 val p = GeoPoint(jo.getDouble("lat"), jo.getDouble("lng"))
                 val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
@@ -699,7 +764,7 @@ class MainActivity : AppCompatActivity() {
 
         try {
             FileWriter(file, false).use { fw ->
-                fw.appendLine("nome_trabalho,tipo_cultura,lat,lng,timestamp,umid,temp,sal,ph,n,p,k,sensorSaved")
+                fw.appendLine("nome_trabalho,tipo_cultura,lat,lng,timestamp,umid,temp,ec,ph,n,p,k,salinity,sensorSaved")
                 for (i in 0 until arr.length()) {
                     val jo = arr.getJSONObject(i)
                     val linha = listOf(
@@ -710,11 +775,12 @@ class MainActivity : AppCompatActivity() {
                         jo.optLong("ts", 0L).toString(),
                         jo.optString("umid", "-"),
                         jo.optString("temp", "-"),
-                        jo.optString("sal", "-"),
+                        jo.optString("ec", "-"),
                         jo.optString("ph", "-"),
                         jo.optString("n", "-"),
                         jo.optString("p", "-"),
                         jo.optString("k", "-"),
+                        jo.optString("salinity", "-"),
                         jo.optBoolean("sensorSaved", false).toString()
                     ).joinToString(",") { csv(it) }
                     fw.appendLine(linha)
@@ -734,8 +800,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         if (::myLocation.isInitialized) myLocation.disableMyLocation()
+        stopAllSerials()
         map.onPause()
         super.onPause()
+    }
+
+    override fun onDestroy() {
+        stopGlobalPoller()
+        super.onDestroy()
     }
 
     fun btnVoltar(view: View) = finish()

@@ -6,20 +6,22 @@ import java.util.Locale
 data class SensorReading(
     val umid: String,  // "12.3%"
     val temp: String,  // "24.5°C"
-    val sal:  String,  // "523"
+    val ec:  String,  // "523"
     val ph:   String,  // "6.8"
     val n:    String,
     val p:    String,
-    val k:    String
+    val k:    String,
+    val salinity: String
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("umid", umid)
         .put("temp", temp)
-        .put("sal",  sal)
+        .put("ec",  ec)
         .put("ph",   ph)
         .put("n",    n)
         .put("p",    p)
         .put("k",    k)
+        .put("salinity",    salinity)
 
     companion object {
         fun fromHexLine(line: String): SensorReading? {
@@ -41,20 +43,23 @@ data class SensorReading(
             val r4 = reg(4) // N
             val r5 = reg(5) // P
             val r6 = reg(6) // K
+            val r7 = reg(7) // salinity
 
             val umidStr = String.format(Locale.US, "%.1f%%", r0 / 10.0)
             val tempStr = String.format(Locale.US, "%.1f°C", r1 / 10.0)
-            val salStr  = String.format(Locale.US, "%d",   r2)
+            val ecStr  = String.format(Locale.US, "%d",   r2)
             val phStr   = String.format(Locale.US, "%.1f", r3 / 10.0)
+
 
             return SensorReading(
                 umid = umidStr,
                 temp = tempStr,
-                sal  = salStr,
+                ec  = ecStr,
                 ph   = phStr,
                 n    = r4.toString(),
                 p    = r5.toString(),
-                k    = r6.toString()
+                k    = r6.toString(),
+                salinity = r7.toString()
             )
         }
     }
