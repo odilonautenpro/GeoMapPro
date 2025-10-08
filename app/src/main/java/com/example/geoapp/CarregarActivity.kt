@@ -4,7 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
-import android.widget.ListView
+import android.widget.GridView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -12,27 +12,23 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class CarregarActivity : AppCompatActivity() {
-    private lateinit var listView: ListView
     private var jobsJson = JSONArray()
     private var labels = mutableListOf<String>()
+    private lateinit var gridView: GridView
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_carregar)
 
-        listView = findViewById(R.id.listTrabalhos)
+        gridView = findViewById(R.id.gridTrabalhos)
 
         jobsJson = loadJobs()
         labels = buildLabels(jobsJson)
 
-        listView.adapter = ArrayAdapter(
-            this,
-            R.layout.item_trabalho,
-            R.id.textItem,
-            labels
-        )
+        gridView.adapter = JobAdapter(this, jobsJson)
 
-        listView.setOnItemClickListener { _, _, position, _ ->
+        gridView.setOnItemClickListener { _, _, position, _ ->
             showJobActionsDialog(position)
         }
     }
@@ -40,12 +36,7 @@ class CarregarActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         jobsJson = loadJobs()
-        labels = buildLabels(jobsJson)
-        (listView.adapter as ArrayAdapter<String>).apply {
-            clear()
-            addAll(labels)
-            notifyDataSetChanged()
-        }
+        gridView.adapter = JobAdapter(this, jobsJson)
     }
 
     private fun showJobActionsDialog(index: Int) {
@@ -112,7 +103,7 @@ class CarregarActivity : AppCompatActivity() {
         sp.edit().remove("pontos_${nome.ifEmpty { "default" }}").apply()
 
         labels = buildLabels(jobsJson)
-        (listView.adapter as ArrayAdapter<String>).apply {
+        (gridView.adapter as ArrayAdapter<String>).apply {
             clear()
             addAll(labels)
             notifyDataSetChanged()

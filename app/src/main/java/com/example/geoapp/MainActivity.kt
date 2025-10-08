@@ -35,6 +35,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import android.widget.Button
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import java.io.FileOutputStream
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
     private val sensorExec = java.util.concurrent.Executors.newSingleThreadExecutor()
@@ -799,6 +803,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        saveMapPreviews()
         if (::myLocation.isInitialized) myLocation.disableMyLocation()
         stopAllSerials()
         map.onPause()
@@ -808,6 +813,36 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         stopGlobalPoller()
         super.onDestroy()
+    }
+
+    private fun saveMapPreviews() {
+        try {
+            if (!::map.isInitialized || map.width <= 0 || map.height <= 0) return
+
+            val bmp = Bitmap.createBitmap(map.width, map.height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bmp)
+            map.draw(canvas)
+
+            val dir = getExternalFilesDir("previews")!!
+            dir.mkdirs()
+
+            val safe = if (nomeTrabalho.isBlank()) "trabalho" else nomeTrabalho.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+            val fullFile  = File(dir, "${safe}_full.jpg")
+            val thumbFile = File(dir, "${safe}_thumb.jpg")
+
+            FileOutputStream(fullFile).use { out -> bmp.compress(Bitmap.CompressFormat.JPEG, 82, out) }
+
+            val targetW = 512
+            val scale   = targetW.toFloat() / bmp.width.toFloat()
+            val targetH = (bmp.height * scale).roundToInt()
+            val thumb   = Bitmap.createScaledBitmap(bmp, targetW, targetH, true)
+            FileOutputStream(thumbFile).use { out -> thumb.compress(Bitmap.CompressFormat.JPEG, 80, out) }
+
+            bmp.recycle()
+            if (thumb !== bmp) thumb.recycle()
+        } catch (e: Exception) {
+            android.util.Log.e("GeoApp", "Falha salvando previews: ${e.message}")
+        }
     }
 
     fun btnVoltar(view: View) = finish()

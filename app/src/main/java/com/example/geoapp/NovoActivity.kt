@@ -1,17 +1,21 @@
 package com.example.geoapp
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.switchmaterial.SwitchMaterial
 import org.json.JSONArray
 import org.json.JSONObject
 
 class NovoActivity : AppCompatActivity() {
+    private var currentPosition = 0
+    private lateinit var videoView: VideoView
     private lateinit var edtNome: EditText
     private lateinit var edtCultura: EditText
     private lateinit var swGeo: SwitchMaterial
@@ -26,6 +30,15 @@ class NovoActivity : AppCompatActivity() {
         edtNome = findViewById(R.id.edtNomeTrabalho)
         edtCultura = findViewById(R.id.edtTipoCultura)
         swGeo = findViewById(R.id.swGeoref)
+
+        videoView = findViewById(R.id.globo_terrestre)
+        val uri = Uri.parse("android.resource://${packageName}/${R.raw.globo_terrestre}")
+        videoView.setVideoURI(uri)
+        videoView.setMediaController(null)
+        videoView.setOnCompletionListener {
+            videoView.start()
+        }
+        videoView.start()
 
         editMode = intent.getBooleanExtra("edit_mode", false)
         editIndex = intent.getIntExtra("edit_index", -1)
@@ -161,6 +174,18 @@ class NovoActivity : AppCompatActivity() {
             if (arr.getJSONObject(i).optString("nome").equals(name, ignoreCase = true)) return i
         }
         return -1
+    }
+
+    override fun onPause() {
+        super.onPause()
+        currentPosition = videoView.currentPosition
+        videoView.pause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        videoView.seekTo(currentPosition)
+        videoView.start()
     }
 
     fun btnVoltar(view: View) = finish()

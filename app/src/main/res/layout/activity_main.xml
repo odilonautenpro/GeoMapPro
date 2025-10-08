@@ -1,5 +1,6 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -10,46 +11,54 @@
 
     <Button
         android:id="@+id/btnVoltar"
-        android:layout_width="110dp"
+        android:layout_width="130dp"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
         android:layout_marginStart="16dp"
         android:layout_marginBottom="16dp"
+        android:onClick="btnVoltar"
         android:text="Voltar"
-        android:onClick="btnVoltar" />
+        app:icon="@drawable/botao_de_retorno"
+        app:iconTint="#FFFFFF" />
 
     <Button
         android:id="@+id/btnExportar"
-        android:layout_width="110dp"
+        android:layout_width="130dp"
         android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/btnVoltar"
         android:layout_alignParentBottom="true"
         android:layout_marginStart="16dp"
         android:layout_marginBottom="16dp"
+        android:layout_toEndOf="@id/btnVoltar"
+        android:onClick="btnExportar"
         android:text="Exportar"
-        android:onClick="btnExportar" />
+        app:icon="@drawable/botao_exportar"
+        app:iconTint="#FFFFFF" />
 
     <Button
         android:id="@+id/btnNovo"
-        android:layout_width="140dp"
+        android:layout_width="160dp"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
+        android:onClick="btnNovoPonto"
         android:text="Novo Ponto"
-        android:onClick="btnNovoPonto" />
+        app:icon="@drawable/maps_and_location"
+        app:iconTint="#FFFFFF" />
 
     <Button
         android:id="@+id/btnListarPontos"
-        android:layout_width="140dp"
+        android:layout_width="160dp"
         android:layout_height="wrap_content"
-        android:layout_toStartOf="@id/btnNovo"
         android:layout_alignParentBottom="true"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
+        android:layout_toStartOf="@id/btnNovo"
+        android:onClick="btnListarPontos"
         android:text="Listar Pontos"
-        android:onClick="btnListarPontos" />
+        app:icon="@drawable/botao_de_lista"
+        app:iconTint="#FFFFFF" />
 
 </RelativeLayout>
