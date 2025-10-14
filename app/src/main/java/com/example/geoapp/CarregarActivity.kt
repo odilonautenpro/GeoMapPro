@@ -3,7 +3,6 @@ package com.example.geoapp
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.GridView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -13,7 +12,6 @@ import org.json.JSONObject
 
 class CarregarActivity : AppCompatActivity() {
     private var jobsJson = JSONArray()
-    private var labels = mutableListOf<String>()
     private lateinit var gridView: GridView
 
 
@@ -24,7 +22,6 @@ class CarregarActivity : AppCompatActivity() {
         gridView = findViewById(R.id.gridTrabalhos)
 
         jobsJson = loadJobs()
-        labels = buildLabels(jobsJson)
 
         gridView.adapter = JobAdapter(this, jobsJson)
 
@@ -102,11 +99,19 @@ class CarregarActivity : AppCompatActivity() {
         val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
         sp.edit().remove("pontos_${nome.ifEmpty { "default" }}").apply()
 
-        labels = buildLabels(jobsJson)
-        (gridView.adapter as ArrayAdapter<String>).apply {
-            clear()
-            addAll(labels)
-            notifyDataSetChanged()
+        val safe = if (nome.isBlank()) "trabalho" else nome.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        val dir = getExternalFilesDir("previews")
+        if (dir != null) {
+            val full  = java.io.File(dir, "${safe}_full.jpg")
+            val thumb = java.io.File(dir, "${safe}_thumb.jpg")
+            try { if (full.exists()) full.delete() } catch (_: Throwable) {}
+            try { if (thumb.exists()) thumb.delete() } catch (_: Throwable) {}
+        }
+
+        gridView.adapter = JobAdapter(this, jobsJson)
+
+        if (jobsJson.length() == 0) {
+            Toast.makeText(this, "Nenhum trabalho cadastrado", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -119,24 +124,6 @@ class CarregarActivity : AppCompatActivity() {
         val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
         val s = sp.getString("jobs_json", "[]") ?: "[]"
         return try { JSONArray(s) } catch (_: Exception) { JSONArray() }
-    }
-
-    private fun buildLabels(arr: JSONArray): MutableList<String> {
-        val out = mutableListOf<String>()
-        for (i in 0 until arr.length()) {
-            val jo: JSONObject = arr.getJSONObject(i)
-            val nome = jo.optString("nome")
-            val cultura = jo.optString("cultura")
-            val gps = if (jo.optBoolean("georef", false)) "GPS ON" else "GPS OFF"
-
-            val label = when {
-                nome.isNotBlank() && cultura.isNotBlank() -> "$nome — $cultura — $gps"
-                nome.isNotBlank() -> "$nome — $gps"
-                else -> "Sem nome — $gps"
-            }
-            out.add(label)
-        }
-        return out
     }
 
     fun btnVoltar(view: View) = finish()

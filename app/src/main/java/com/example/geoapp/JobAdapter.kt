@@ -13,6 +13,8 @@ import android.widget.TextView
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.util.concurrent.Executors
+import org.osmdroid.util.BoundingBox
 
 class JobAdapter(
     private val context: Context,
@@ -59,12 +61,16 @@ class JobAdapter(
             if (cached != null) {
                 img.setImageBitmap(cached)
             } else {
-                val bmp = decodeSampled(thumb, reqWidth = 400, reqHeight = 300)
-                if (bmp != null) {
-                    cache.put(key, bmp)
-                    img.setImageBitmap(bmp)
+                Executors.newSingleThreadExecutor().execute {
+                    val bmp = decodeSampled(thumb, 400, 300)
+                    if (bmp != null) {
+                        cache.put(key, bmp)
+                        img.post { img.setImageBitmap(bmp) }
+                    }
                 }
             }
+        } else {
+            img.setImageResource(android.R.drawable.ic_menu_mapmode)
         }
 
         return view

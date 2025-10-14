@@ -1,17 +1,11 @@
 package com.example.geoapp
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.location.LocationManager
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -23,7 +17,6 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Overlay
-import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import org.osmdroid.mapsforge.MapsForgeTileProvider
 import org.osmdroid.mapsforge.MapsForgeTileSource
@@ -36,7 +29,6 @@ import java.util.Date
 import java.util.Locale
 import android.widget.Button
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import java.io.FileOutputStream
 import kotlin.math.roundToInt
 
@@ -122,16 +114,6 @@ class MainActivity : AppCompatActivity() {
         return p
     }
 
-    private val requestLocationPerms =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { perms ->
-            val granted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                    perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-            if (granted) {
-                centerOnStartupLocation()
-                setupMyLocationOverlayAndCenter()
-            }
-        }
-
     private class CenterCrossOverlay(
         private val sizeDp: Float = 14f,
         private val strokeDp: Float = 2f,
@@ -176,15 +158,12 @@ class MainActivity : AppCompatActivity() {
         map.setMultiTouchControls(true)
 
         setupOfflineMapOrWarn()
-
-        crossOverlay = CenterCrossOverlay()
-        map.overlays.add(crossOverlay)
-
+        if (!georefHabilitado) {
+            crossOverlay = CenterCrossOverlay()
+            map.overlays.add(crossOverlay)
+        }
         if (georefHabilitado) {
-            ensureLocationAndProvidersThen {
-                centerOnStartupLocation()
-                setupMyLocationOverlayAndCenter()
-            }
+            setupNmeaLocationOverlay()
         } else {
             map.controller.setCenter(FIXED_FALLBACK)
         }
@@ -195,6 +174,32 @@ class MainActivity : AppCompatActivity() {
         }
 
         desenharPontosDoPrefs()
+    }
+
+    private fun setupNmeaLocationOverlay() {
+        val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
+        val defaultZoom = sp.getFloat("default_zoom", 16f).toDouble()
+
+        val provider = NmeaSerialLocationProvider(
+            device = "/dev/ttyUSB0",
+            baud = 115200,
+            minFixQuality = 1
+        )
+
+        myLocation = MyLocationNewOverlay(provider, map).apply {
+            enableMyLocation()
+            enableFollowLocation()
+            runOnFirstFix {
+                runOnUiThread {
+                    getMyLocation()?.let {
+                        map.controller.setZoom(defaultZoom)
+                        map.controller.animateTo(it)
+                    }
+                }
+            }
+        }
+        map.overlays.add(myLocation)
+        map.invalidate()
     }
 
     private fun setupOfflineMapOrWarn() {
@@ -221,88 +226,6 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Usando mapa offline: ${mapFile.name}", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Falha no mapa offline: ${e.message}", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun ensureLocationAndProvidersThen(afterOk: () -> Unit) {
-        val hasFine  = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        val hasCoarse= ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        if (!(hasFine || hasCoarse)) {
-            requestLocationPerms.launch(arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ))
-            return
-        }
-        val lm = getSystemService(LOCATION_SERVICE) as LocationManager
-        val gpsOn = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        val netOn = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-        if (!gpsOn && !netOn) {
-            Toast.makeText(this, "Ative GPS ou Localização por Rede", Toast.LENGTH_LONG).show()
-        }
-        afterOk()
-    }
-
-    private fun centerOnStartupLocation() {
-        val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
-        val defaultZoom = sp.getFloat("default_zoom", 16f).toDouble()
-        val lm = getSystemService(LOCATION_SERVICE) as LocationManager
-
-        val lastGps = try { lm.getLastKnownLocation(LocationManager.GPS_PROVIDER) } catch (_: SecurityException) { null }
-        val lastNet = try { lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) } catch (_: SecurityException) { null }
-        val best = listOfNotNull(lastGps, lastNet).maxByOrNull { it.time }
-        if (best != null) {
-            val p = GeoPoint(best.latitude, best.longitude)
-            map.controller.setZoom(defaultZoom)
-            map.controller.setCenter(p)
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            try {
-                lm.getCurrentLocation(LocationManager.GPS_PROVIDER, null, mainExecutor) { loc ->
-                    loc?.let {
-                        val here = GeoPoint(it.latitude, it.longitude)
-                        map.controller.setZoom(defaultZoom)
-                        map.controller.setCenter(here)
-                    }
-                }
-            } catch (_: SecurityException) { }
-        }
-    }
-
-    private fun setupMyLocationOverlayAndCenter() {
-        val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
-        val defaultZoom = sp.getFloat("default_zoom", 16f).toDouble()
-
-        val provider = GpsMyLocationProvider(this).apply {
-            addLocationSource(LocationManager.NETWORK_PROVIDER)
-        }
-
-        myLocation = MyLocationNewOverlay(provider, map).apply {
-            enableMyLocation()
-            enableFollowLocation()
-            runOnFirstFix {
-                runOnUiThread {
-                    getMyLocation()?.let {
-                        map.controller.setZoom(defaultZoom)
-                        map.controller.animateTo(it)
-                    }
-                }
-            }
-        }
-        map.overlays.add(myLocation)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val lm = getSystemService(LOCATION_SERVICE) as LocationManager
-            try {
-                lm.getCurrentLocation(LocationManager.GPS_PROVIDER, null, mainExecutor) { loc ->
-                    loc?.let {
-                        val here = GeoPoint(it.latitude, it.longitude)
-                        map.controller.setZoom(defaultZoom)
-                        map.controller.animateTo(here)
-                    }
-                }
-            } catch (_: SecurityException) { }
         }
     }
 
@@ -713,6 +636,18 @@ class MainActivity : AppCompatActivity() {
 
     fun btnNovoPonto(view: View) {
         stopAllSerials()
+        if (georefHabilitado) {
+            val p = try {
+                if (::myLocation.isInitialized) myLocation.getMyLocation() else null
+            } catch (_: Throwable) { null }
+
+            if (p == null) {
+                Toast.makeText(this, "Sem posição da antena ainda. Aguarde fix GPS.", Toast.LENGTH_SHORT).show()
+                return
+            }
+            addPonto(p)
+            return
+        }
         val center = map.mapCenter
         val p = GeoPoint(center.latitude, center.longitude)
         addPonto(p)
