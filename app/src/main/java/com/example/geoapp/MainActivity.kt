@@ -172,7 +172,6 @@ class MainActivity : AppCompatActivity() {
             limparPontosDoTrabalho()
             true
         }
-
         desenharPontosDoPrefs()
     }
 
