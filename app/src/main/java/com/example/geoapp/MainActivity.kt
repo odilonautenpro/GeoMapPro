@@ -44,7 +44,13 @@ class MainActivity : AppCompatActivity() {
     private val MAX_MARKERS_TO_DRAW = 500
     private val MAX_POINTS_TO_KEEP  = 5000
     private val pontosKey: String get() = "pontos_${nomeTrabalho.ifEmpty { "default" }}"
-    private val FIXED_FALLBACK = GeoPoint(-26.1955215, -52.6710228)
+    private fun fallbackCenter(): GeoPoint {
+        val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
+        return when (sp.getString("region", "br")) {
+            "py" -> GeoPoint(-25.2749506, -57.602302) // Paraguay
+            else -> GeoPoint(-26.1955215, -52.6710228) // Brazil
+        }
+    }
     private object PontoKeys {
         const val ID   = "id"
         const val LAT  = "lat"
@@ -146,13 +152,37 @@ class MainActivity : AppCompatActivity() {
         tipoCultura      = intent.getStringExtra("tipo_cultura").orEmpty()
         georefHabilitado = intent.getBooleanExtra("georreferenciamento_habilitado", false)
 
+        val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
+        val appRegion = sp.getString("region", "br") ?: "br"
+
+        val jobRegion = try {
+            val jobs = org.json.JSONArray(sp.getString("jobs_json", "[]") ?: "[]")
+            var found: String? = null
+            for (i in 0 until jobs.length()) {
+                val jo = jobs.getJSONObject(i)
+                if (jo.optString("nome").equals(nomeTrabalho, ignoreCase = true)) {
+                    found = jo.optString("region", "br")
+                    break
+                }
+            }
+            found ?: "br"
+        } catch (_: Throwable) { "br" }
+
+        if (!jobRegion.equals(appRegion, ignoreCase = true)) {
+            sp.edit().putString("region", jobRegion).apply()
+            android.widget.Toast.makeText(
+                this,
+                "Alternado para ${if (jobRegion == "py") "Paraguai" else "Brasil"} para abrir o trabalho “$nomeTrabalho”.",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+
         Configuration.getInstance().userAgentValue = packageName
 
         @Suppress("UNCHECKED_CAST")
         map = (findViewById<MapView?>(resources.getIdentifier("mapView", "id", packageName))
             ?: findViewById(resources.getIdentifier("map", "id", packageName))) as MapView
 
-        val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
         val defaultZoom = sp.getFloat("default_zoom", 16f).toDouble()
         map.controller.setZoom(defaultZoom)
         map.setMultiTouchControls(true)
@@ -165,7 +195,7 @@ class MainActivity : AppCompatActivity() {
         if (georefHabilitado) {
             setupNmeaLocationOverlay()
         } else {
-            map.controller.setCenter(FIXED_FALLBACK)
+            map.controller.setCenter(fallbackCenter())
         }
 
         findViewById<View>(R.id.btnListarPontos).setOnLongClickListener {
@@ -205,15 +235,62 @@ class MainActivity : AppCompatActivity() {
         AndroidGraphicFactory.createInstance(application)
         MapsForgeTileSource.createInstance(application)
 
+        val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
+        val region = sp.getString("region", "br") ?: "br"
+        val mapName = if (region == "py") "paraguay.map" else "brazil.map"
+
         val mapsDir = File(getExternalFilesDir("maps"), "")
-        val mapFile = File(mapsDir, "brazil.map")
+        val mapFile = File(mapsDir, mapName)
+
+        if (mapFile.exists() && mapFile.length() < 1_000_000L) {
+            try { mapFile.delete() } catch (_: Throwable) {}
+        }
 
         if (!mapFile.exists()) {
-            Toast.makeText(this, "brazil.map não encontrado em ${mapsDir.absolutePath}", Toast.LENGTH_LONG).show()
+            Thread {
+                try {
+                    val assetPath = "maps/$mapName"
+                    assets.open(assetPath).use { input ->
+                        mapsDir.mkdirs()
+                        FileOutputStream(mapFile).use { output ->
+                            val buf = ByteArray(8 * 1024 * 1024) // 8 MB buffer
+                            while (true) {
+                                val r = input.read(buf)
+                                if (r <= 0) break
+                                output.write(buf, 0, r)
+                            }
+                            output.flush()
+                        }
+                    }
+                    if (mapFile.length() < 1_000_000L) throw IllegalStateException("tamanho inválido (${mapFile.length()})")
+
+                    runOnUiThread {
+                        tryUseOfflineMap(mapFile)
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        Toast.makeText(
+                            this,
+                            "Mapa offline ausente nos assets ou cópia falhou (${e.message}). " +
+                                    "Coloque o arquivo em /Android/data/${packageName}/files/maps/",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        map.setUseDataConnection(true)
+                    }
+                }
+            }.start()
             return
         }
 
+        tryUseOfflineMap(mapFile)
+    }
+
+    private fun tryUseOfflineMap(mapFile: File) {
         try {
+            if (!mapFile.exists() || mapFile.length() < 1_000_000L) {
+                throw IllegalArgumentException("invalid size (${mapFile.length()})")
+            }
+
             val tileSource = MapsForgeTileSource.createFromFiles(arrayOf(mapFile))
             val forgeProvider = MapsForgeTileProvider(
                 SimpleRegisterReceiver(this),
@@ -224,7 +301,9 @@ class MainActivity : AppCompatActivity() {
             map.setUseDataConnection(false)
             Toast.makeText(this, "Usando mapa offline: ${mapFile.name}", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(this, "Falha no mapa offline: ${e.message}", Toast.LENGTH_LONG).show()
+            try { if (mapFile.exists()) mapFile.delete() } catch (_: Throwable) {}
+            Toast.makeText(this, "Falha no mapa offline: ${e.message}. Usando Mapnik online.", Toast.LENGTH_LONG).show()
+            map.setUseDataConnection(true) // fallback online
         }
     }
 

@@ -65,11 +65,16 @@ class NovoActivity : AppCompatActivity() {
             }
         }
 
+        val region = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
+            .getString("region", "br") ?: "br"
+
         val novo = JSONObject()
             .put("nome", nome)
             .put("cultura", cultura)
             .put("georef", georef)
+            .put("region", region)
             .put("ts", System.currentTimeMillis())
+
 
         if (idx >= 0) {
             arr.put(idx, novo)
@@ -133,6 +138,8 @@ class NovoActivity : AppCompatActivity() {
     private fun updateJob(index: Int, oldName: String, newName: String, cultura: String, georef: Boolean) {
         val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
         val arr = JSONArray(sp.getString("jobs_json", "[]") ?: "[]")
+        val region = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
+            .getString("region", "br") ?: "br"
 
         if (index in 0 until arr.length()) {
             if (!oldName.equals(newName, ignoreCase = true) && jobIndexByName(newName) != -1) {
@@ -143,6 +150,7 @@ class NovoActivity : AppCompatActivity() {
             jo.put("nome", newName)
             jo.put("cultura", cultura)
             jo.put("georef", georef)
+            jo.put("region", region)
             jo.put("ts", System.currentTimeMillis())
 
             sp.edit().putString("jobs_json", arr.toString()).apply()

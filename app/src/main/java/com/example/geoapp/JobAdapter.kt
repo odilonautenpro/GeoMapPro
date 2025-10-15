@@ -44,10 +44,15 @@ class JobAdapter(
         val nome    = job.optString("nome")
         val cultura = job.optString("cultura")
         val gps     = if (job.optBoolean("georef", false)) "GPS ON" else "GPS OFF"
-        txt.text    = when {
-            nome.isNotBlank() && cultura.isNotBlank() -> "$nome — $cultura — $gps"
-            nome.isNotBlank() -> "$nome — $gps"
-            else -> "Sem nome — $gps"
+        val region = job.optString("region", null) ?: run {
+            val sp = context.getSharedPreferences("geoapp_prefs", Context.MODE_PRIVATE)
+            sp.getString("region", "br") ?: "br"
+        }
+        val selo = if (region == "py") "PY" else "BR"
+        txt.text = when {
+            nome.isNotBlank() && cultura.isNotBlank() -> "$nome — $cultura — $gps — $selo"
+            nome.isNotBlank() -> "$nome — $gps — $selo"
+            else -> "Sem nome — $gps — $selo"
         }
 
         val safe = if (nome.isBlank()) "trabalho" else nome.replace(Regex("[^a-zA-Z0-9_-]"), "_")
@@ -82,7 +87,7 @@ class JobAdapter(
 
         opts.inSampleSize = calculateInSampleSize(opts, reqWidth, reqHeight)
         opts.inJustDecodeBounds = false
-        opts.inPreferredConfig = Bitmap.Config.RGB_565 // usa metade da RAM de ARGB_8888
+        opts.inPreferredConfig = Bitmap.Config.RGB_565
         return BitmapFactory.decodeFile(file.absolutePath, opts)
     }
 
