@@ -11,7 +11,7 @@
 
     <Button
         android:id="@+id/btnVoltar"
-        android:layout_width="130dp"
+        android:layout_width="160dp"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
@@ -24,7 +24,7 @@
 
     <Button
         android:id="@+id/btnExportar"
-        android:layout_width="130dp"
+        android:layout_width="160dp"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_marginStart="16dp"
@@ -59,6 +59,32 @@
         android:onClick="btnListarPontos"
         android:text="Listar Pontos"
         app:icon="@drawable/botao_de_lista"
+        app:iconTint="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnAddPonto"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="125dp"
+        android:onClick="btnAddPonto"
+        android:text="Ponto Área"
+        app:icon="@drawable/pointer"
+        app:iconTint="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnGerarArea"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="70dp"
+        android:onClick="btnGerarArea"
+        android:text="Gerar Área"
+        app:icon="@drawable/area"
         app:iconTint="#FFFFFF" />
 
 </RelativeLayout>

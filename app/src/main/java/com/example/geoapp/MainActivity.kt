@@ -31,11 +31,22 @@ import android.widget.Button
 import android.graphics.Bitmap
 import java.io.FileOutputStream
 import kotlin.math.roundToInt
+import org.osmdroid.views.overlay.Polygon
+import org.osmdroid.views.overlay.infowindow.InfoWindow
+import org.osmdroid.views.overlay.MapEventsOverlay
+import org.osmdroid.events.MapEventsReceiver
 
 class MainActivity : AppCompatActivity() {
     private val sensorExec = java.util.concurrent.Executors.newSingleThreadExecutor()
     @Volatile private var reading = false
     private lateinit var map: MapView
+    private val areaPts = mutableListOf<GeoPoint>()
+    private var areaPolygon: Polygon? = null
+    private val areaMarkers = mutableListOf<Marker>()
+    private var areaFinalizada: Boolean = false
+    private val COLOR_VERTEX       = 0xFF757575.toInt() // marcadores cinza 600
+    private val COLOR_AREA_OUTLINE = 0xFF616161.toInt() // contorno cinza 700
+    private val COLOR_AREA_FILL    = 0x80666666.toInt() // preenchimento cinza 50%
     private lateinit var myLocation: MyLocationNewOverlay
     private lateinit var crossOverlay: Overlay
     private var nomeTrabalho: String = ""
@@ -187,6 +198,15 @@ class MainActivity : AppCompatActivity() {
         map.controller.setZoom(defaultZoom)
         map.setMultiTouchControls(true)
 
+        val closerOverlay = MapEventsOverlay(object : MapEventsReceiver {
+            override fun singleTapConfirmedHelper(p: org.osmdroid.util.GeoPoint?): Boolean {
+                InfoWindow.closeAllInfoWindowsOn(map)
+                return false
+            }
+            override fun longPressHelper(p: org.osmdroid.util.GeoPoint?): Boolean = false
+        })
+        map.overlays.add(0, closerOverlay)
+
         setupOfflineMapOrWarn()
         if (!georefHabilitado) {
             crossOverlay = CenterCrossOverlay()
@@ -202,6 +222,28 @@ class MainActivity : AppCompatActivity() {
             limparPontosDoTrabalho()
             true
         }
+
+        carregarAreaDoPrefs()
+        atualizarAreaOverlay()
+
+        findViewById<View>(R.id.btnAddPonto).setOnClickListener {
+            adicionarPontoNoCentro()
+        }
+
+        findViewById<View>(R.id.btnAddPonto).setOnLongClickListener {
+            limparArea()
+            true
+        }
+
+        findViewById<View>(R.id.btnGerarArea).setOnClickListener {
+            finalizarArea()
+        }
+
+        findViewById<View>(R.id.btnGerarArea).setOnLongClickListener {
+            desfazerArea()
+            true
+        }
+
         desenharPontosDoPrefs()
     }
 
@@ -253,7 +295,7 @@ class MainActivity : AppCompatActivity() {
                     assets.open(assetPath).use { input ->
                         mapsDir.mkdirs()
                         FileOutputStream(mapFile).use { output ->
-                            val buf = ByteArray(8 * 1024 * 1024) // 8 MB buffer
+                            val buf = ByteArray(8 * 1024 * 1024)
                             while (true) {
                                 val r = input.read(buf)
                                 if (r <= 0) break
@@ -303,7 +345,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             try { if (mapFile.exists()) mapFile.delete() } catch (_: Throwable) {}
             Toast.makeText(this, "Falha no mapa offline: ${e.message}. Usando Mapnik online.", Toast.LENGTH_LONG).show()
-            map.setUseDataConnection(true) // fallback online
+            map.setUseDataConnection(true)
         }
     }
 
@@ -856,6 +898,187 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             android.util.Log.e("GeoApp", "Falha salvando previews: ${e.message}")
         }
+    }
+
+    private fun adicionarPontoNoCentro() {
+        val center = map.mapCenter as? GeoPoint ?: return
+        if (areaFinalizada) {
+            areaFinalizada = false
+            android.widget.Toast.makeText(this, "Área desfeita. Continue adicionando pontos e depois gere novamente.", android.widget.Toast.LENGTH_SHORT).show()
+        }
+        areaPts.add(GeoPoint(center.latitude, center.longitude))
+        salvarAreaNoPrefs()
+        atualizarAreaOverlay()
+    }
+
+    private fun finalizarArea() {
+        if (areaPts.size < 3) {
+            android.widget.Toast.makeText(this, "Adicione pelo menos 3 pontos para gerar a área.", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        areaFinalizada = true
+        salvarAreaNoPrefs()
+        atualizarAreaOverlay()
+        android.widget.Toast.makeText(this, "Área gerada.", android.widget.Toast.LENGTH_SHORT).show()
+    }
+
+    private fun desfazerArea() {
+        if (!areaFinalizada) return
+        areaFinalizada = false
+        salvarAreaNoPrefs()
+        atualizarAreaOverlay()
+        android.widget.Toast.makeText(this, "Área desfeita. Você pode editar os pontos.", android.widget.Toast.LENGTH_SHORT).show()
+    }
+
+    private fun limparArea() {
+        areaMarkers.forEach { map.overlays.remove(it) }
+        areaMarkers.clear()
+        areaPolygon?.let { map.overlays.remove(it) }
+        areaPolygon = null
+        areaPts.clear()
+        areaFinalizada = false
+        salvarAreaNoPrefs()
+        map.invalidate()
+    }
+
+    private fun atualizarAreaOverlay() {
+        areaMarkers.forEach { map.overlays.remove(it) }
+        areaMarkers.clear()
+
+        val vertexIcon = makeDotDrawable(COLOR_VERTEX)
+
+        for ((idx, gp) in areaPts.withIndex()) {
+            val m = Marker(map).apply {
+                position = gp
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                title = "Vértice ${idx + 1}"
+                icon = vertexIcon
+            }
+            areaMarkers.add(m)
+            map.overlays.add(m)
+        }
+
+        areaPolygon?.let { map.overlays.remove(it) }
+        areaPolygon = null
+
+        if (areaFinalizada && areaPts.size >= 3) {
+            val polygon = Polygon(map).apply {
+                points = areaPts + areaPts.first()
+                outlinePaint.strokeWidth = 4f
+                outlinePaint.isAntiAlias = true
+                outlinePaint.color = COLOR_AREA_OUTLINE
+                fillPaint.style = android.graphics.Paint.Style.FILL
+                fillPaint.color = COLOR_AREA_FILL
+            }
+
+            polygon.setOnClickListener { _, _, _ ->
+                if (polygon.isInfoWindowOpen) {
+                    polygon.closeInfoWindow()
+                    return@setOnClickListener true
+                }
+                val ha  = computeAreaHectares(areaPts)
+                val per = computePerimeterMeters(areaPts)
+                val haStr = String.format(java.util.Locale.US, "%.2f", ha)
+                val perStr = if (per >= 1000) {
+                    String.format(java.util.Locale.US, "%.2f km", per / 1000.0)
+                } else {
+                    String.format(java.util.Locale.US, "%.0f m", per)
+                }
+                polygon.title = "Área: ${haStr} ha"
+                polygon.snippet = "Perímetro: ${perStr}"
+                polygon.showInfoWindow()
+                true
+            }
+
+            areaPolygon = polygon
+            map.overlays.add(polygon)
+        }
+
+        map.invalidate()
+    }
+
+    private fun computeAreaHectares(points: List<GeoPoint>): Double {
+        if (points.size < 3) return 0.0
+        var lat0 = 0.0; var lon0 = 0.0
+        for (p in points) { lat0 += p.latitude; lon0 += p.longitude }
+        lat0 /= points.size; lon0 /= points.size
+
+        val R = 6371000.0
+        val lat0Rad = Math.toRadians(lat0)
+        fun toXY(p: GeoPoint): Pair<Double, Double> {
+            val x = R * Math.toRadians(p.longitude - lon0) * Math.cos(lat0Rad)
+            val y = R * Math.toRadians(p.latitude - lat0)
+            return x to y
+        }
+
+        var sum = 0.0
+        for (i in points.indices) {
+            val (x1, y1) = toXY(points[i])
+            val (x2, y2) = toXY(points[(i + 1) % points.size])
+            sum += (x1 * y2 - x2 * y1)
+        }
+        val areaM2 = kotlin.math.abs(sum) * 0.5
+        return areaM2 / 10_000.0
+    }
+
+    private fun computePerimeterMeters(points: List<GeoPoint>): Double {
+        if (points.size < 2) return 0.0
+        var d = 0.0
+        for (i in points.indices) {
+            val a = points[i]
+            val b = points[(i + 1) % points.size]
+            d += a.distanceToAsDouble(b)
+        }
+        return d
+    }
+
+    private fun salvarAreaNoPrefs() {
+        try {
+            val arr = org.json.JSONArray()
+            for (p in areaPts) {
+                arr.put(org.json.JSONObject().put("lat", p.latitude).put("lon", p.longitude))
+            }
+            val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
+            sp.edit()
+                .putString("area_${nomeTrabalho}", arr.toString())
+                .putBoolean("area_finalizada_${nomeTrabalho}", areaFinalizada)
+                .apply()
+        } catch (_: Throwable) { /* ignore */ }
+    }
+
+    private fun carregarAreaDoPrefs() {
+        areaPts.clear()
+        areaFinalizada = false
+        try {
+            val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
+            val s = sp.getString("area_${nomeTrabalho}", null)
+            if (s != null) {
+                val arr = org.json.JSONArray(s)
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    areaPts.add(GeoPoint(o.getDouble("lat"), o.getDouble("lon")))
+                }
+            }
+            areaFinalizada = sp.getBoolean("area_finalizada_${nomeTrabalho}", false)
+        } catch (_: Throwable) { /* ignore */ }
+    }
+
+    private fun dpToPx(dp: Float): Int =
+        (dp * resources.displayMetrics.density).toInt()
+
+    private fun makeDotDrawable(@androidx.annotation.ColorInt color: Int): android.graphics.drawable.BitmapDrawable {
+        val size = dpToPx(16f)
+        val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp)
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        p.style = android.graphics.Paint.Style.FILL
+        p.color = color
+        c.drawCircle(size / 2f, size / 2f, size / 2.4f, p)
+        p.style = android.graphics.Paint.Style.STROKE
+        p.strokeWidth = dpToPx(1.5f).toFloat()
+        p.color = 0xFF1A1A1A.toInt()
+        c.drawCircle(size / 2f, size / 2f, size / 2.4f, p)
+        return android.graphics.drawable.BitmapDrawable(resources, bmp)
     }
 
     fun btnVoltar(view: View) = finish()

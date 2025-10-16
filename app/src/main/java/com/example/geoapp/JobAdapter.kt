@@ -14,7 +14,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.Executors
-import org.osmdroid.util.BoundingBox
 
 class JobAdapter(
     private val context: Context,
