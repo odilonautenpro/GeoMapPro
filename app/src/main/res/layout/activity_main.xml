@@ -87,4 +87,116 @@
         app:icon="@drawable/area"
         app:iconTint="#FFFFFF" />
 
+    <Button
+        android:id="@+id/btnMapaPh"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="70dp"
+        android:onClick="btnMapaPh"
+        android:text="Mapa pH"
+        app:icon="@drawable/ph"
+        android:backgroundTint="#FFA000"
+        app:iconTint="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnMapaTemp"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="125dp"
+        android:backgroundTint="#3CB371"
+        android:onClick="btnMapaTemp"
+        android:text="Mapa Temp."
+        app:icon="@drawable/temperatura"
+        app:iconTint="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnMapaUmid"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="180dp"
+        android:backgroundTint="#3F51B5"
+        android:onClick="btnMapaUmid"
+        android:text="Mapa Umid."
+        app:icon="@drawable/umidade"
+        app:iconTint="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnMapaN"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="235dp"
+        android:backgroundTint="#EC407A"
+        android:onClick="btnMapaN"
+        android:text="Mapa (N)"
+        app:icon="@drawable/azoto"
+        app:iconTint="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnMapaP"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="290dp"
+        android:backgroundTint="#42A5F5"
+        android:onClick="btnMapaP"
+        android:text="Mapa (P)"
+        app:icon="@drawable/fosforo"
+        app:iconTint="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnMapaK"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="345dp"
+        android:backgroundTint="#26C6DA"
+        android:onClick="btnMapaK"
+        android:text="Mapa (K)"
+        app:icon="@drawable/potassio"
+        app:iconTint="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnMapaSal"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="400dp"
+        android:backgroundTint="#FF5909"
+        android:onClick="btnMapaSal"
+        android:text="Mapa Sal."
+        app:icon="@drawable/sal"
+        app:iconTint="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnMapaCond"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="455dp"
+        android:backgroundTint="#8E44AD"
+        android:onClick="btnMapaCond"
+        android:text="Mapa Cond."
+        app:icon="@drawable/raio"
+        app:iconTint="#FFFFFF" />
+
 </RelativeLayout>

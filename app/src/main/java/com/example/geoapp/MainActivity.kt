@@ -80,6 +80,9 @@ class MainActivity : AppCompatActivity() {
     private val activePollers = java.util.Collections.synchronizedSet(mutableSetOf<RootSerialPoller>())
     private var globalPoller: RootSerialPoller? = null
     @Volatile private var lastReading: SensorReading? = null
+    private var mapLocked = false
+    private var activeHeatmap: Overlay? = null
+    private var allowedWhileLockedId: Int = R.id.btnMapaPh
 
     private fun startGlobalPoller(
         device: String = "/dev/ttyS7",
@@ -212,6 +215,10 @@ class MainActivity : AppCompatActivity() {
             crossOverlay = CenterCrossOverlay()
             map.overlays.add(crossOverlay)
         }
+        else {
+            crossOverlay = CenterCrossOverlay()
+            map.overlays.add(crossOverlay)
+        }
         if (georefHabilitado) {
             setupNmeaLocationOverlay()
         } else {
@@ -229,19 +236,40 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnAddPonto).setOnClickListener {
             adicionarPontoNoCentro()
         }
-
         findViewById<View>(R.id.btnAddPonto).setOnLongClickListener {
             limparArea()
             true
         }
-
         findViewById<View>(R.id.btnGerarArea).setOnClickListener {
             finalizarArea()
         }
-
         findViewById<View>(R.id.btnGerarArea).setOnLongClickListener {
             desfazerArea()
             true
+        }
+        findViewById<View>(R.id.btnMapaPh).setOnClickListener {
+            gerarMapaAtributo(R.id.btnMapaPh, "pH", "ph")
+        }
+        findViewById<View>(R.id.btnMapaTemp).setOnClickListener {
+            gerarMapaAtributo(R.id.btnMapaTemp, "Temperatura (°C)", "temp")
+        }
+        findViewById<View>(R.id.btnMapaUmid).setOnClickListener {
+            gerarMapaAtributo(R.id.btnMapaUmid, "Umidade (%)", "umid")
+        }
+        findViewById<View>(R.id.btnMapaN).setOnClickListener {
+            gerarMapaAtributo(R.id.btnMapaN, "Nitrogênio (N)", "n")
+        }
+        findViewById<View>(R.id.btnMapaP).setOnClickListener {
+            gerarMapaAtributo(R.id.btnMapaP, "Fósforo (P)", "p")
+        }
+        findViewById<View>(R.id.btnMapaK).setOnClickListener {
+            gerarMapaAtributo(R.id.btnMapaK, "Potássio (K)", "k")
+        }
+        findViewById<View>(R.id.btnMapaSal).setOnClickListener {
+            gerarMapaAtributo(R.id.btnMapaSal, "Salinidade", "salinity")
+        }
+        findViewById<View>(R.id.btnMapaCond).setOnClickListener {
+            gerarMapaAtributo(R.id.btnMapaCond, "Condutividade", "ec")
         }
 
         desenharPontosDoPrefs()
@@ -1079,6 +1107,181 @@ class MainActivity : AppCompatActivity() {
         p.color = 0xFF1A1A1A.toInt()
         c.drawCircle(size / 2f, size / 2f, size / 2.4f, p)
         return android.graphics.drawable.BitmapDrawable(resources, bmp)
+    }
+
+    private fun sensorAtributoDentroDaArea(chave: String): List<Pair<GeoPoint, Double>> {
+        val sp = getSharedPreferences("geoapp_prefs", MODE_PRIVATE)
+        val s = sp.getString(pontosKey, "[]") ?: "[]"
+        val arr = org.json.JSONArray(s)
+        if (areaPts.size < 3) return emptyList()
+
+        val poly = areaPts.toList()
+        val pts = mutableListOf<Pair<GeoPoint, Double>>()
+
+        fun parseDouble(str: String?): Double? {
+            if (str.isNullOrBlank()) return null
+            val v = str.replace(",", ".").lowercase()
+                .replace("ph", "")
+                .replace("°c", "")
+                .replace("%", "")
+                .replace("mg/kg", "")
+                .replace("ms/cm", "")
+                .replace("[^0-9.\\-+]".toRegex(), "")
+                .trim()
+            return v.toDoubleOrNull()
+        }
+
+        for (i in 0 until arr.length()) {
+            val jo = arr.getJSONObject(i)
+            if (!jo.optBoolean("sensorSaved", false)) continue
+            val lat = jo.optDouble("lat", Double.NaN)
+            val lng = jo.optDouble("lng", Double.NaN)
+            if (lat.isNaN() || lng.isNaN()) continue
+
+            val valueStr = jo.optString(chave, null) ?: continue
+            val value = parseDouble(valueStr) ?: continue
+
+            val gp = GeoPoint(lat, lng)
+            val inside = pointInPolygonXY(
+                projectPolygon(listOf(gp), poly)[0],
+                projectPolygon(poly, listOf(gp))
+            )
+            if (inside) pts += gp to value
+        }
+        return pts
+    }
+
+    private fun gerarMapaAtributo(
+        botaoId: Int,
+        tituloLegenda: String,
+        chaveJson: String,
+        paleta: (Double, Double, Double, Int) -> Int = SensorHeatmapOverlay::defaultRamp
+    ) {
+        if (activeHeatmap != null && allowedWhileLockedId == botaoId) {
+            removerMapaAtributo()
+            return
+        }
+
+        val amostras = sensorAtributoDentroDaArea(chaveJson)
+        if (amostras.size < 3) {
+            android.widget.Toast.makeText(this, "É preciso pelo menos 3 pontos com $tituloLegenda dentro da área.", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        activeHeatmap?.let { map.overlays.remove(it) }
+        activeHeatmap = null
+
+        allowedWhileLockedId = botaoId
+
+        Thread {
+            try {
+                val ov = SensorHeatmapOverlay(
+                    polygon = areaPts.toList(),
+                    samples = amostras,
+                    variogram = Variogram(range = 35.0, sill = 1.0, nugget = 0.05),
+                    gridSizePx = 420,
+                    legendTitle = tituloLegenda,
+                    colorRamp = paleta
+                )
+                runOnUiThread {
+                    activeHeatmap = ov
+                    map.overlays.add(ov)
+                    lockMapInteractions()
+                    map.invalidate()
+                }
+            } catch (t: Throwable) {
+                runOnUiThread {
+                    android.widget.Toast.makeText(this, "Erro ao gerar mapa: ${t.message}", android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
+        }.start()
+    }
+
+    private fun removerMapaAtributo() {
+        activeHeatmap?.let { map.overlays.remove(it) }
+        activeHeatmap = null
+        unlockMapInteractions()
+        map.invalidate()
+    }
+
+    private fun lockMapInteractions() {
+        if (mapLocked) return
+        mapLocked = true
+
+        map.setMultiTouchControls(false)
+        map.setOnTouchListener { _, _ -> true }
+        map.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
+
+        val root = findViewById<android.view.ViewGroup>(android.R.id.content)
+        fun disableTree(v: android.view.View) {
+            if (v.id == allowedWhileLockedId) return
+            v.isEnabled = false
+            v.isClickable = false
+            v.isFocusable = false
+            if (v is android.view.ViewGroup) for (i in 0 until v.childCount) disableTree(v.getChildAt(i))
+        }
+        disableTree(root)
+
+        val mapButtons = intArrayOf(
+            R.id.btnMapaPh, R.id.btnMapaTemp, R.id.btnMapaUmid,
+            R.id.btnMapaN,  R.id.btnMapaP,   R.id.btnMapaK,
+            R.id.btnMapaSal, R.id.btnMapaCond
+        )
+        for (id in mapButtons) {
+            val b = findViewById<android.view.View>(id) ?: continue
+            if (id == allowedWhileLockedId) {
+                b.alpha = 1f
+                b.isEnabled = true
+                b.isClickable = true
+            } else {
+                b.alpha = 0.35f
+                b.isEnabled = false
+                b.isClickable = false
+            }
+        }
+
+        val center = map.mapCenter as org.osmdroid.util.GeoPoint
+        val eps = 1e-6
+        val bb = org.osmdroid.util.BoundingBox(center.latitude + eps, center.longitude + eps, center.latitude - eps, center.longitude - eps)
+        map.setScrollableAreaLimitDouble(bb)
+        val z = map.zoomLevelDouble
+        map.setMinZoomLevel(z)
+        map.setMaxZoomLevel(z)
+    }
+
+    private fun unlockMapInteractions() {
+        if (!mapLocked) return
+        mapLocked = false
+
+        map.setOnTouchListener(null)
+        map.setMultiTouchControls(true)
+        map.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.SHOW_AND_FADEOUT)
+
+        val root = findViewById<android.view.ViewGroup>(android.R.id.content)
+        fun enableTree(v: android.view.View) {
+            v.isEnabled = true
+            v.isClickable = true
+            v.isFocusable = true
+            if (v is android.view.ViewGroup) for (i in 0 until v.childCount) enableTree(v.getChildAt(i))
+        }
+        enableTree(root)
+
+        val mapButtons = intArrayOf(
+            R.id.btnMapaPh, R.id.btnMapaTemp, R.id.btnMapaUmid,
+            R.id.btnMapaN,  R.id.btnMapaP,   R.id.btnMapaK,
+            R.id.btnMapaSal, R.id.btnMapaCond
+        )
+        for (id in mapButtons) {
+            val b = findViewById<android.view.View>(id) ?: continue
+            b.alpha = 1f
+            b.isEnabled = true
+            b.isClickable = true
+        }
+
+        val world = org.osmdroid.util.BoundingBox(85.0511, 180.0, -85.0511, -180.0)
+        map.setScrollableAreaLimitDouble(world)
+        map.setMinZoomLevel(3.0)
+        map.setMaxZoomLevel(22.0)
     }
 
     fun btnVoltar(view: View) = finish()
