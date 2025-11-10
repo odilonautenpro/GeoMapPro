@@ -846,9 +846,11 @@ class MainActivity : AppCompatActivity() {
 
         val dir = File(getExternalFilesDir(null), "exports").apply { if (!exists()) mkdirs() }
         val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val safeName = if (nomeTrabalho.isBlank()) "trabalho" else nomeTrabalho.replace(Regex("[^a-zA-Z0-9_-]"), "_")
-        val file = File(dir, "pontos_${safeName}_$ts.csv")
-
+        val safeTrabalho = (if (nomeTrabalho.isBlank()) "trabalho" else nomeTrabalho)
+            .replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        val safeCultura = (if (tipoCultura.isBlank()) "cultura" else tipoCultura)
+            .replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        val file = File(dir, "${safeTrabalho}_${safeCultura}_$ts.csv")
         try {
             FileWriter(file, false).use { fw ->
                 fw.appendLine("nome_trabalho,tipo_cultura,lat,lng,timestamp,umid,temp,ec,ph,n,p,k,salinity,sensorSaved")

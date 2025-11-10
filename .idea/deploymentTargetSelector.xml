@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-10-06T17:33:28.473769100Z">
+        <DropdownSelection timestamp="2025-11-05T16:18:01.443497600Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=12RAB4600XXC24M0062" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\odilo\.android\avd\Medium_Tablet.avd" />
             </handle>
           </Target>
         </DropdownSelection>

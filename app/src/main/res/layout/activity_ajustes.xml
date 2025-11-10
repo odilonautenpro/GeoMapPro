@@ -71,6 +71,29 @@
             android:textColor="#FFFFFF"/>
     </LinearLayout>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Arquivos Exportados"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="16dp" />
+
+    <ScrollView
+        android:id="@+id/exportScroll"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:background="#151515"
+        android:padding="8dp"
+        android:layout_marginTop="4dp">
+
+        <LinearLayout
+            android:id="@+id/exportList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
