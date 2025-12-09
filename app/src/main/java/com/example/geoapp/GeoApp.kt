@@ -11,9 +11,15 @@ import java.io.InputStreamReader
 import java.util.concurrent.Executors
 
 class GeoApp : Application() {
+    companion object {
+        lateinit var instance: GeoApp
+            private set
+    }
 
     override fun onCreate() {
         super.onCreate()
+
+        instance = this
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
@@ -24,13 +30,13 @@ class GeoApp : Application() {
             }
         })
     }
+
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         if (level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
             RootShell.execAsync("sh -c 'echo 5 > /sys/class/EMDEBUG/custom_output_gpio'")
         }
     }
-
 }
 
 object RootShell {

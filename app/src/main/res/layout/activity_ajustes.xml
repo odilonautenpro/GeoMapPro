@@ -83,9 +83,9 @@
         android:id="@+id/exportScroll"
         android:layout_width="match_parent"
         android:layout_height="200dp"
+        android:layout_marginTop="4dp"
         android:background="#151515"
-        android:padding="8dp"
-        android:layout_marginTop="4dp">
+        android:padding="8dp">
 
         <LinearLayout
             android:id="@+id/exportList"
@@ -99,17 +99,34 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="bottom|start"
-        android:orientation="vertical">
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/btnVoltar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
+            android:layout_margin="1dp"
             android:backgroundTint="@color/white"
             android:text="Voltar"
             android:textColor="@color/black"
             app:icon="@drawable/botao_de_retorno"
             app:iconTint="#666666" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/btnOffset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:backgroundTint="@color/white"
+            android:text="Offset"
+            android:textColor="@color/black"
+            app:icon="@android:drawable/ic_dialog_dialer"
+            app:iconTint="#666666" />
     </LinearLayout>
+
 </LinearLayout>

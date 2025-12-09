@@ -47,28 +47,35 @@ class AjustesActivity : AppCompatActivity() {
         val rbPy = findViewById<RadioButton>(R.id.rbParaguai)
         val tvZoom = findViewById<TextView>(R.id.tvZoomValue)
         val sbZoom = findViewById<SeekBar>(R.id.sbZoom)
+        val btnOffset = findViewById<Button>(R.id.btnOffset)
+        val btnVoltar = findViewById<Button>(R.id.btnVoltar)
 
         if (currentRegion == "py") rbPy?.isChecked = true else rbBr?.isChecked = true
-
-        tvZoom?.text = String.format(Locale.getDefault(), "%.1f", defaultZoom)
-        sbZoom?.max = 18
-        sbZoom?.progress = defaultZoom.toInt()
-        sbZoom?.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                tvZoom?.text = String.format(Locale.getDefault(), "%.1f", progress.toFloat())
-                sp.edit().putFloat("default_zoom", progress.toFloat()).apply()
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
 
         rg?.setOnCheckedChangeListener { _, checkedId ->
             val region = if (checkedId == R.id.rbParaguai) "py" else "br"
             sp.edit().putString("region", region).apply()
         }
 
-        val btnVoltar = findViewById<Button>(R.id.btnVoltar)
-        btnVoltar.setOnClickListener {
+        tvZoom?.text = String.format(Locale.getDefault(), "%.1f", defaultZoom)
+        sbZoom?.max = 18
+        sbZoom?.progress = defaultZoom.toInt()
+        sbZoom?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                tvZoom?.text = String.format(Locale.getDefault(), "%.1f", progress.toFloat())
+                sp.edit().putFloat("default_zoom", progress.toFloat()).apply()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        btnOffset?.setOnClickListener {
+            val dialog = OffsetDialogFragment()
+            dialog.show(supportFragmentManager, "offsetDialog")
+        }
+
+        btnVoltar?.setOnClickListener {
             setResult(Activity.RESULT_OK)
             finish()
         }

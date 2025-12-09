@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootOffsetDialog"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#000000">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Calibração de Offset"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btnFecharOffset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Fechar" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Offset Umidade (%)"
+                android:textColor="#FFFFFF" />
+
+            <EditText
+                android:id="@+id/etOffsetUmid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal|numberSigned"
+                android:hint="ex: -2.5" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Offset Temperatura (°C)"
+                android:textColor="#FFFFFF" />
+
+            <EditText
+                android:id="@+id/etOffsetTemp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal|numberSigned"
+                android:hint="ex: 0.8" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Offset Condutividade (EC)"
+                android:textColor="#FFFFFF" />
+
+            <EditText
+                android:id="@+id/etOffsetEc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal|numberSigned"
+                android:hint="ex: 10" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Offset pH"
+                android:textColor="#FFFFFF" />
+
+            <EditText
+                android:id="@+id/etOffsetPh"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal|numberSigned"
+                android:hint="ex: -0.3" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Offset Nitrogênio (N)"
+                android:textColor="#FFFFFF" />
+
+            <EditText
+                android:id="@+id/etOffsetN"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal|numberSigned"
+                android:hint="ex: 5" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Offset Fósforo (P)"
+                android:textColor="#FFFFFF" />
+
+            <EditText
+                android:id="@+id/etOffsetP"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal|numberSigned"
+                android:hint="ex: 3" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Offset Potássio (K)"
+                android:textColor="#FFFFFF" />
+
+            <EditText
+                android:id="@+id/etOffsetK"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal|numberSigned"
+                android:hint="ex: 4" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Offset Salinidade"
+                android:textColor="#FFFFFF" />
+
+            <EditText
+                android:id="@+id/etOffsetSalinity"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal|numberSigned"
+                android:hint="ex: -1" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

@@ -141,20 +141,43 @@ class RootSerialPoller(
         val r6 = u16(6) // K
         val r7 = u16(7) // salinity
 
-        val umidStr = String.format(Locale.US, "%.1f%%", r0 / 10.0)
-        val tempStr = String.format(Locale.US, "%.1f°C", r1 / 10.0)
-        val ecStr = r2.toString()
-        val phStr = String.format(Locale.US, "%.1f", r3 / 10.0)
+        val sp = GeoApp.instance.getSharedPreferences(
+            "geoapp_prefs",
+            android.content.Context.MODE_PRIVATE
+        )
+
+        val offUmid = sp.getFloat("offset_umid", 0f).toDouble()
+        val offTemp = sp.getFloat("offset_temp", 0f).toDouble()
+        val offEc = sp.getFloat("offset_ec", 0f).toDouble()
+        val offPh = sp.getFloat("offset_ph", 0f).toDouble()
+        val offN = sp.getFloat("offset_n", 0f).toDouble()
+        val offP = sp.getFloat("offset_p", 0f).toDouble()
+        val offK = sp.getFloat("offset_k", 0f).toDouble()
+        val offSal = sp.getFloat("offset_salinity", 0f).toDouble()
+
+        val umidVal = r0 / 10.0 + offUmid
+        val tempVal = r1 / 10.0 + offTemp
+        val ecVal = r2.toDouble() + offEc
+        val phVal = r3 / 10.0 + offPh
+        val nVal = r4.toDouble() + offN
+        val pVal = r5.toDouble() + offP
+        val kVal = r6.toDouble() + offK
+        val salVal = r7.toDouble() + offSal
+
+        val umidStr = String.format(Locale.US, "%.1f%%", umidVal)
+        val tempStr = String.format(Locale.US, "%.1f°C", tempVal)
+        val ecStr = ecVal.toInt().toString()
+        val phStr = String.format(Locale.US, "%.1f", phVal)
 
         return SensorReading(
             umid = umidStr,
             temp = tempStr,
             ec = ecStr,
             ph = phStr,
-            n = r4.toString(),
-            p = r5.toString(),
-            k = r6.toString(),
-            salinity = r7.toString()
+            n = nVal.toInt().toString(),
+            p = pVal.toInt().toString(),
+            k = kVal.toInt().toString(),
+            salinity = salVal.toInt().toString()
         )
     }
 
