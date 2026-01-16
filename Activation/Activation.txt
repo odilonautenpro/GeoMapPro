@@ -1,0 +1,73 @@
+1 - Baixar o OpenSSL v3.6.0
+
+2 - Configurar as variáveis do ambiente
+
+3 - Rodar o comando (gerar chave privada): openssl ecparam -name prime256v1 -genkey -noout -out company_priv.pem
+
+4 - Rodar o comando (gerar chave pública): openssl ec -in company_priv.pem -pubout -out company_pub.pem
+
+5 - Rodar o comando (extrair chave para backend do app): openssl ec -pubin -in company_pub.pem -outform DER | openssl base64 -A
+
+6 - Baixar o Python 
+
+7 - Baixar a dependencia: pip install cryptography
+
+8 - Rodar o script para obter a chave de ativação: python nome_do_aqrquivo.py "REQ:SEU_CODIGO_AQUI" L-000001 0
+
+
+SCRIPT:
+
+import base64, json, time, sys
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+def b64url_decode(s: str) -> bytes:
+    pad = "=" * (-len(s) % 4)
+    return base64.urlsafe_b64decode(s + pad)
+
+def sign_payload(priv_pem_path: str, payload_bytes: bytes) -> bytes:
+    with open(priv_pem_path, "rb") as f:
+        priv = load_pem_private_key(f.read(), password=None)
+    return priv.sign(payload_bytes, ec.ECDSA(hashes.SHA256()))
+
+def make_license(req_text: str, priv_pem_path: str, license_id: str, expires_at_ms: int = 0) -> str:
+    if not req_text.startswith("REQ:"):
+        raise ValueError("REQ inválido (não começa com REQ:)")
+
+    req_b64 = req_text[4:].strip()
+    req_json = b64url_decode(req_b64).decode("utf-8")
+    req = json.loads(req_json)
+
+    payload = {
+        "pkg": req["pkg"],
+        "pubkey_hash": req["pubkey_hash"],
+        "license_id": license_id,
+        "issued_at": int(time.time() * 1000),
+        "expires_at": int(expires_at_ms),  # 0 = vitalício
+    }
+
+    # JSON canônico: sem espaços e com ordem estável (muito importante!)
+    payload_bytes = json.dumps(payload, separators=(",", ":"), sort_keys=True, ensure_ascii=False).encode("utf-8")
+
+    sig = sign_payload(priv_pem_path, payload_bytes)
+
+    return "LIC:" + b64url(payload_bytes) + "." + b64url(sig)
+
+if __name__ == "__main__":
+    # Uso:
+    # python gen_license.py "REQ:...." L-000123 0
+    # expires_at_ms = 0 (vitalício) ou timestamp em ms
+    if len(sys.argv) < 3:
+        print("Uso: python gen_license.py \"REQ:...\" L-000123 [expires_at_ms]")
+        sys.exit(1)
+
+    req = sys.argv[1]
+    lic_id = sys.argv[2]
+    exp = int(sys.argv[3]) if len(sys.argv) >= 4 else 0
+
+    lic = make_license(req, "company_priv.pem", lic_id, exp)
+    print(lic)

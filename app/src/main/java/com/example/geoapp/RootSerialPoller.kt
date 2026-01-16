@@ -7,6 +7,7 @@ import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
+import android.content.SharedPreferences
 
 class RootSerialPoller(
     private val device: String = "/dev/ttyS7",
@@ -106,6 +107,16 @@ class RootSerialPoller(
     """.trimIndent()
     }
 
+    private fun applyCalibration(
+        raw: Double,
+        sp: SharedPreferences,
+        keyPrefix: String
+    ): Double {
+        val a = sp.getFloat("${keyPrefix}_a", 1f).toDouble()
+        val b = sp.getFloat("${keyPrefix}_b", 0f).toDouble()
+        return a * raw + b
+    }
+
     private fun parseHexToReadingOrNull(hexLine: String): SensorReading? {
         val parts = hexLine.trim().split(Regex("\\s+"))
             .filter { it.isNotEmpty() }
@@ -141,33 +152,33 @@ class RootSerialPoller(
         val r6 = u16(6) // K
         val r7 = u16(7) // salinity
 
-        val sp = GeoApp.instance.getSharedPreferences(
-            "geoapp_prefs",
-            android.content.Context.MODE_PRIVATE
-        )
+        val sp = GeoApp.instance.getSharedPreferences("geoapp_prefs", android.content.Context.MODE_PRIVATE)
+        val soilFactor = sp.getFloat("soil_factor", 1.5f).toDouble()
 
-        val offUmid = sp.getFloat("offset_umid", 0f).toDouble()
-        val offTemp = sp.getFloat("offset_temp", 0f).toDouble()
-        val offEc = sp.getFloat("offset_ec", 0f).toDouble()
-        val offPh = sp.getFloat("offset_ph", 0f).toDouble()
-        val offN = sp.getFloat("offset_n", 0f).toDouble()
-        val offP = sp.getFloat("offset_p", 0f).toDouble()
-        val offK = sp.getFloat("offset_k", 0f).toDouble()
-        val offSal = sp.getFloat("offset_salinity", 0f).toDouble()
+        // valores crus
+        val umidRaw = r0 / 10.0
+        val tempRaw = r1 / 10.0
+        val ecRaw   = r2.toDouble()
+        val phRaw   = r3 / 10.0
+        val nRaw    = r4.toDouble() * soilFactor
+        val pRaw    = r5.toDouble() * soilFactor
+        val kRaw    = r6.toDouble() * soilFactor
+        val salRaw  = r7.toDouble()
 
-        val umidVal = r0 / 10.0 + offUmid
-        val tempVal = r1 / 10.0 + offTemp
-        val ecVal = r2.toDouble() + offEc
-        val phVal = r3 / 10.0 + offPh
-        val nVal = r4.toDouble() + offN
-        val pVal = r5.toDouble() + offP
-        val kVal = r6.toDouble() + offK
-        val salVal = r7.toDouble() + offSal
+        // aplica calibração Y = A·X + B
+        val umidVal = applyCalibration(umidRaw, sp, "cal_umid")
+        val tempVal = applyCalibration(tempRaw, sp, "cal_temp")
+        val ecVal   = applyCalibration(ecRaw,   sp, "cal_ec")
+        val phVal   = applyCalibration(phRaw,   sp, "cal_ph")
+        val nVal    = applyCalibration(nRaw,    sp, "cal_n")
+        val pVal    = applyCalibration(pRaw,    sp, "cal_p")
+        val kVal    = applyCalibration(kRaw,    sp, "cal_k")
+        val salVal  = applyCalibration(salRaw,  sp, "cal_sal")
 
         val umidStr = String.format(Locale.US, "%.1f%%", umidVal)
         val tempStr = String.format(Locale.US, "%.1f°C", tempVal)
-        val ecStr = ecVal.toInt().toString()
-        val phStr = String.format(Locale.US, "%.1f", phVal)
+        val ecStr   = ecVal.toInt().toString()
+        val phStr   = String.format(Locale.US, "%.1f", phVal)
 
         return SensorReading(
             umid = umidStr,

@@ -48,5 +48,5 @@ dependencies {
     implementation("org.osmdroid:osmdroid-android:6.1.20")
     implementation("org.osmdroid:osmdroid-mapsforge:6.1.20")
     implementation("androidx.lifecycle:lifecycle-process:2.8.4")
-
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }

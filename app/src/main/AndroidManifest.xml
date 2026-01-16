@@ -42,5 +42,6 @@
         <activity android:name=".NovoActivity" />
         <activity android:name=".AjustesActivity" />
         <activity android:name=".CarregarActivity" />
+        <activity android:name=".ActivationActivity" />
     </application>
 </manifest>

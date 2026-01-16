@@ -1126,7 +1126,7 @@ class MainActivity : AppCompatActivity() {
                 .replace("ph", "")
                 .replace("°c", "")
                 .replace("%", "")
-                .replace("mg/kg", "")
+                .replace("mg/dm³", "")
                 .replace("ms/cm", "")
                 .replace("[^0-9.\\-+]".toRegex(), "")
                 .trim()

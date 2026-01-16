@@ -240,7 +240,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Nitrogênio (N) mg/kg"
+                    android:text="Nitrogênio (N) mg/dm³"
                     android:textColor="@android:color/white"
                     android:textSize="12sp" />
                 <TextView
@@ -265,7 +265,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Fósforo (P) mg/kg"
+                    android:text="Fósforo (P) mg/dm³"
                     android:textColor="@android:color/white"
                     android:textSize="12sp" />
                 <TextView
@@ -290,7 +290,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Potássio (K) mg/kg"
+                    android:text="Potássio (K) mg/dm³"
                     android:textColor="@android:color/white"
                     android:textSize="12sp" />
                 <TextView

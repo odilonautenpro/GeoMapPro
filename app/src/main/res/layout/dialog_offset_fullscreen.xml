@@ -40,109 +40,581 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Offset Umidade (%)"
-                android:textColor="#FFFFFF" />
-
-            <EditText
-                android:id="@+id/etOffsetUmid"
+            <!-- Umidade -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal|numberSigned"
-                android:hint="ex: -2.5" />
+                android:orientation="horizontal"
+                android:weightSum="2">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Offset Temperatura (°C)"
-                android:textColor="#FFFFFF" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingEnd="8dp">
 
-            <EditText
-                android:id="@+id/etOffsetTemp"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Umidade - Ponto 1" />
+
+                    <EditText
+                        android:id="@+id/etUmidX1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X1)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etUmidY1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y1)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingStart="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Umidade - Ponto 2" />
+
+                    <EditText
+                        android:id="@+id/etUmidX2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X2)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etUmidY2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y2)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Temperatura -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal|numberSigned"
-                android:hint="ex: 0.8" />
+                android:orientation="horizontal"
+                android:weightSum="2"
+                android:layout_marginTop="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Offset Condutividade (EC)"
-                android:textColor="#FFFFFF" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingEnd="8dp">
 
-            <EditText
-                android:id="@+id/etOffsetEc"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Temperatura - Ponto 1" />
+
+                    <EditText
+                        android:id="@+id/etTempX1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X1)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etTempY1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y1)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingStart="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Temperatura - Ponto 2" />
+
+                    <EditText
+                        android:id="@+id/etTempX2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X2)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etTempY2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y2)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Condutividade EC -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal|numberSigned"
-                android:hint="ex: 10" />
+                android:orientation="horizontal"
+                android:weightSum="2"
+                android:layout_marginTop="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Offset pH"
-                android:textColor="#FFFFFF" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingEnd="8dp">
 
-            <EditText
-                android:id="@+id/etOffsetPh"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Condutividade - Ponto 1" />
+
+                    <EditText
+                        android:id="@+id/etEcX1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X1)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etEcY1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y1)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingStart="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Condutividade - Ponto 2" />
+
+                    <EditText
+                        android:id="@+id/etEcX2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X2)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etEcY2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y2)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- pH -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal|numberSigned"
-                android:hint="ex: -0.3" />
+                android:orientation="horizontal"
+                android:weightSum="2"
+                android:layout_marginTop="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Offset Nitrogênio (N)"
-                android:textColor="#FFFFFF" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingEnd="8dp">
 
-            <EditText
-                android:id="@+id/etOffsetN"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="pH - Ponto 1" />
+
+                    <EditText
+                        android:id="@+id/etPhX1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X1)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etPhY1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y1)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingStart="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="pH - Ponto 2" />
+
+                    <EditText
+                        android:id="@+id/etPhX2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X2)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etPhY2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y2)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Nitrogênio -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal|numberSigned"
-                android:hint="ex: 5" />
+                android:orientation="horizontal"
+                android:weightSum="2"
+                android:layout_marginTop="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Offset Fósforo (P)"
-                android:textColor="#FFFFFF" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingEnd="8dp">
 
-            <EditText
-                android:id="@+id/etOffsetP"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nitrogênio (N) - Ponto 1" />
+
+                    <EditText
+                        android:id="@+id/etNX1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X1)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etNY1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y1)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingStart="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nitrogênio (N) - Ponto 2" />
+
+                    <EditText
+                        android:id="@+id/etNX2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X2)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etNY2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y2)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Fósforo -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal|numberSigned"
-                android:hint="ex: 3" />
+                android:orientation="horizontal"
+                android:weightSum="2"
+                android:layout_marginTop="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Offset Potássio (K)"
-                android:textColor="#FFFFFF" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingEnd="8dp">
 
-            <EditText
-                android:id="@+id/etOffsetK"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Fósforo (P) - Ponto 1" />
+
+                    <EditText
+                        android:id="@+id/etPX1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X1)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etPY1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y1)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingStart="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Fósforo (P) - Ponto 2" />
+
+                    <EditText
+                        android:id="@+id/etPX2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X2)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etPY2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y2)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Potássio -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal|numberSigned"
-                android:hint="ex: 4" />
+                android:orientation="horizontal"
+                android:weightSum="2"
+                android:layout_marginTop="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Offset Salinidade"
-                android:textColor="#FFFFFF" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingEnd="8dp">
 
-            <EditText
-                android:id="@+id/etOffsetSalinity"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Potássio (K) - Ponto 1" />
+
+                    <EditText
+                        android:id="@+id/etKX1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X1)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etKY1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y1)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingStart="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Potássio (K) - Ponto 2" />
+
+                    <EditText
+                        android:id="@+id/etKX2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X2)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etKY2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y2)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Salinidade -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal|numberSigned"
-                android:hint="ex: -1" />
+                android:orientation="horizontal"
+                android:weightSum="2"
+                android:layout_marginTop="16dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingEnd="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Salinidade - Ponto 1" />
+
+                    <EditText
+                        android:id="@+id/etSalX1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X1)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etSalY1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y1)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingStart="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Salinidade - Ponto 2" />
+
+                    <EditText
+                        android:id="@+id/etSalX2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor medido pelo sensor (X2)"
+                        android:inputType="numberDecimal|numberSigned" />
+
+                    <EditText
+                        android:id="@+id/etSalY2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Valor laboratorial (Y2)"
+                        android:inputType="numberDecimal|numberSigned" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Tipo de Solo -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tipo de Solo"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="20dp"/>
+
+            <RadioGroup
+                android:id="@+id/rgTipoSolo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="8dp">
+
+                <RadioButton
+                    android:id="@+id/rbFofo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Fofo"
+                    android:textColor="#FFFFFF"/>
+
+                <RadioButton
+                    android:id="@+id/rbMedio"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Médio"
+                    android:textColor="#FFFFFF"/>
+
+                <RadioButton
+                    android:id="@+id/rbCompactado"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Compactado"
+                    android:textColor="#FFFFFF"/>
+            </RadioGroup>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp">
+
+                <Button
+                    android:id="@+id/btnSoloMenos"
+                    android:layout_width="60dp"
+                    android:layout_height="48dp"
+                    android:text="-"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etSoloValor"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:inputType="numberDecimal"
+                    android:hint="1.5"
+                    android:textColor="@color/black"
+                    android:textColorHint="#AAAAAA"
+                    android:background="@android:drawable/editbox_background"/>
+
+                <Button
+                    android:id="@+id/btnSoloMais"
+                    android:layout_width="60dp"
+                    android:layout_height="48dp"
+                    android:text="+"
+                    android:textStyle="bold" />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

@@ -40,17 +40,38 @@ class HomeActivity : AppCompatActivity() {
     }
 
     fun btnNovo(view: View) {
-        val intent = Intent(this, NovoActivity::class.java)
-        startActivity(intent)
+        if (!LicenseManager.isUnlocked(this)) {
+            val intent = Intent(this, ActivationActivity::class.java)
+            startActivity(intent)
+        }
+        else
+        {
+            val intent = Intent(this, NovoActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     fun btnCarregar(view: View) {
-        val intent = Intent(this, CarregarActivity::class.java)
-        startActivity(intent)
+        if (!LicenseManager.isUnlocked(this)) {
+            val intent = Intent(this, ActivationActivity::class.java)
+            startActivity(intent)
+        }
+        else
+        {
+            val intent = Intent(this, CarregarActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     fun btnAjustes(view: View) {
-        val intent = Intent(this, AjustesActivity::class.java)
-        startActivity(intent)
+        if (!LicenseManager.isUnlocked(this)) {
+            val intent = Intent(this, ActivationActivity::class.java)
+            startActivity(intent)
+        }
+        else
+        {
+            val intent = Intent(this, AjustesActivity::class.java)
+            startActivity(intent)
+        }
     }
 }
