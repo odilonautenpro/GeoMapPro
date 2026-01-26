@@ -54,10 +54,13 @@ object LicenseManager {
         val pkg = json.getString("pkg")
         val pubHash = json.getString("pubkey_hash")
         val expiresAt = json.optLong("expires_at", 0L)
+        val now = System.currentTimeMillis()
+
+        android.util.Log.d("LicenseManager", "expiresAt=$expiresAt, now=$now")
 
         if (pkg != ctx.packageName) return false
         if (pubHash != DeviceKey.pubKeyHashB64Url()) return false
-        if (expiresAt != 0L && System.currentTimeMillis() > expiresAt) return false
+        if (expiresAt != 0L && now > expiresAt) return false
 
         return true
     }

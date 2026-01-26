@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrollAbout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:id="@+id/containerAbout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/txtAboutTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sobre"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:paddingBottom="12dp" />
+
+        <LinearLayout
+            android:id="@+id/cardApp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:background="@android:drawable/dialog_holo_light_frame">
+
+            <TextView
+                android:id="@+id/txtAppName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="GeoMap PRO"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:justificationMode="inter_word" />
+
+            <TextView
+                android:id="@+id/txtAppVersion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Versão: 1.0.0"
+                android:textSize="14sp"
+                android:paddingTop="4dp"
+                android:justificationMode="inter_word" />
+
+            <TextView
+                android:id="@+id/txtAppCopyright"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="© Auten Pro. Todos os direitos reservados."
+                android:textSize="14sp"
+                android:paddingTop="8dp"
+                android:justificationMode="inter_word" />
+            <TextView
+                android:id="@+id/txtCompanyDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="O GeoMap PRO é um software proprietário destinado à coleta, visualização e análise de dados de solo, integrando sensores dedicados para uso agrícola profissional."
+                android:textSize="14sp"
+                android:paddingTop="8dp"
+                android:justificationMode="inter_word" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardThirdParty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:background="@android:drawable/dialog_holo_light_frame">
+
+            <TextView
+                android:id="@+id/txtLibMapsforgeTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Mapsforge"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:justificationMode="inter_word" />
+
+            <TextView
+                android:id="@+id/txtLibMapsforgeCopy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Copyright © Mapsforge Contributors"
+                android:textSize="14sp"
+                android:paddingTop="8dp"
+                android:justificationMode="inter_word" />
+
+            <TextView
+                android:id="@+id/txtLibMapsforgeLicense"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Licenciado sob a GNU Lesser General Public License v3.0 (LGPL-3.0)."
+                android:textSize="14sp"
+                android:paddingTop="8dp"
+                android:justificationMode="inter_word" />
+
+            <TextView
+                android:id="@+id/txtLibMapsforgeDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Este aplicativo utiliza a biblioteca Mapsforge para renderização de mapas offline."
+                android:textSize="14sp"
+                android:paddingTop="8dp"
+                android:justificationMode="inter_word" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txtBottomSpace"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp" />
+    </LinearLayout>
+
+</ScrollView>

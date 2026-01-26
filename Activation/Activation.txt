@@ -13,7 +13,8 @@
 7 - Baixar a dependencia: pip install cryptography
 
 8 - Rodar o script para obter a chave de ativação: python nome_do_aqrquivo.py "REQ:SEU_CODIGO_AQUI" L-000001 0
-
+						   $exp = [DateTimeOffset]::Parse("2026-12-31T00:00:00Z").ToUnixTimeMilliseconds()
+						   python nome_do_aqrquivo.py "REQ:SEU_CODIGO_AQUI" L-000001 $exp
 
 SCRIPT:
 

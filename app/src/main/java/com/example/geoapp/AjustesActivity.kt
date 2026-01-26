@@ -49,6 +49,7 @@ class AjustesActivity : AppCompatActivity() {
         val sbZoom = findViewById<SeekBar>(R.id.sbZoom)
         val btnOffset = findViewById<Button>(R.id.btnOffset)
         val btnVoltar = findViewById<Button>(R.id.btnVoltar)
+        val btnSobre = findViewById<Button>(R.id.btnSobre)
 
         if (currentRegion == "py") rbPy?.isChecked = true else rbBr?.isChecked = true
 
@@ -75,7 +76,12 @@ class AjustesActivity : AppCompatActivity() {
             dialog.show(supportFragmentManager, "offsetDialog")
         }
 
-        btnVoltar?.setOnClickListener {
+        btnSobre?.setOnClickListener {
+            val dialog = SobreDialogFragment()
+            dialog.show(supportFragmentManager, "sobreDiaolog")
+        }
+
+            btnVoltar?.setOnClickListener {
             setResult(Activity.RESULT_OK)
             finish()
         }
